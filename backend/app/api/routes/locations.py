@@ -13,22 +13,24 @@ from app.services.supabase import SupabaseRestClient, SupabaseRestError
 
 router = APIRouter()
 
-LOCATION_COLUMNS = (
-    "id,name_ja,name_en,category,area,latitude,longitude,official_url,price_min_jpy,"
-    "price_max_jpy,price_note,exhibition_starts_on,exhibition_ends_on,"
-    "exhibition_period_note,description_ja,description_en"
-)
-
 
 @router.get("/locations", response_model=LocationFeatureCollection)
-async def list_locations(client: SupabaseRestClient = Depends(get_client)) -> LocationFeatureCollection:
+async def list_locations(
+    client: SupabaseRestClient = Depends(get_client),
+) -> LocationFeatureCollection:
+    rows: list[dict[str, Any]] = []
     try:
-        rows: list[dict[str, Any]] = await client.request(
-            "GET",
-            "locations",
-            params={"select": LOCATION_COLUMNS, "order": "name_ja", "limit": "3000"},
-            profile="travel",
-        )
+        while True:
+            page = await client.request(
+                "GET",
+                "locations",
+                # Selecting * also works before the additive venue migration is applied.
+                params={"select": "*", "order": "id", "limit": "500", "offset": str(len(rows))},
+                profile="travel",
+            )
+            if not page:
+                break
+            rows.extend(page)
     except SupabaseRestError as error:
         raise HTTPException(status_code=502, detail="Unable to load travel locations") from error
 
@@ -36,7 +38,9 @@ async def list_locations(client: SupabaseRestClient = Depends(get_client)) -> Lo
         LocationFeature(
             id=str(row["id"]),
             geometry=PointGeometry(coordinates=(row["longitude"], row["latitude"])),
-            properties=LocationProperties(**row),
+            properties=LocationProperties(
+                **{**row, "venue_id": row.get("venue_id") or str(row["id"])}
+            ),
         )
         for row in rows
     ]

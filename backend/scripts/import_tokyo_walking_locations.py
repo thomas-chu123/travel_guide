@@ -141,7 +141,8 @@ def post_rows(base_url: str, key: str, rows: list[dict[str, object]], dry_run: b
         "Content-Type": "application/json",
         "Accept-Profile": "travel",
         "Content-Profile": "travel",
-        "Prefer": "resolution=merge-duplicates,return=minimal",
+        # This source is only a seed. Never overwrite subsequently curated fields.
+        "Prefer": "resolution=ignore-duplicates,return=minimal",
         "User-Agent": "TokyoEventMapImporter/1.0",
     }
     for start in range(0, len(rows), 200):

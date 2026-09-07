@@ -52,3 +52,34 @@ Docker 可用時，改以 `docker compose up --build` 啟動。
 - `DELETE /{table}?id=eq.1`：刪除符合篩選條件的資料。
 
 更新與刪除沒有篩選條件時會被拒絕；未列入 `SUPABASE_ALLOWED_TABLES` 的表也無法操作。
+
+## 場館資料整合（Supabase travel.locations）
+
+先以 schema owner 在 Supabase SQL Editor 或 PostgreSQL 連線執行
+`backend/sql/0003_location_venue_details.sql`。這是獨立於本機 SQLite 的 migration；
+REST 金鑰不能執行 DDL。`venue_id` 是現有 `id` 的唯讀別名，避免重新分配場館 ID。
+中文名稱與未核實資訊可以空白；舊座標及來源不代表已完成官網核對。
+
+在專案根目錄執行完整盤點（自動載入本機 `.env`，分頁讀取）：
+
+```bash
+PYTHONPATH=backend backend/.venv/bin/python backend/scripts/enrich_locations.py --output data/location-audit.json
+```
+
+`backend/curation/venues.initial.json` 是 2026-09-07 以官網核對的首批三館資料。
+只核對名稱、分類、地址、行政區、URL 與營運狀態；未重新核對座標，因此未填整筆
+`verified_at`。`operating` 指持續營運，不表示查詢當天沒有例行休館。
+其他候選仍須逐館核對，名稱重複不自動合併。
+
+JSON 更新檔以 `venue_id` 指定現有場館，只列出要更新的欄位，必須附 `source_url`。
+不接受 null 清空或未知欄位；有新欄位但尚未 migration 時會中止。
+先預覽，再使用新的備份檔名套用：
+
+```bash
+PYTHONPATH=backend backend/.venv/bin/python backend/scripts/enrich_locations.py --patches backend/curation/venues.initial.json --output data/venue-preview.json
+PYTHONPATH=backend backend/.venv/bin/python backend/scripts/enrich_locations.py --patches backend/curation/venues.initial.json --output data/venue-backup.json --apply
+```
+
+工具保留完整舊資料及差異，再逐筆更新，並用 `updated_at` 防止覆蓋同時發生的修改。
+批次不是單一交易；中途失敗時，已成功的項目仍保留，可重新產生差異後續跑。
+既有 Walking Map importer 改為僅新增、不覆寫同一 `source_key`，保護人工補齊資料。

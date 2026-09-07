@@ -1,0 +1,38 @@
+[
+  {
+    "venue_id": "d3eebe65-5a1d-4842-822a-6a7a0bbb3236",
+    "name_ja": "国立新美術館",
+    "category": "art_museum",
+    "address_ja": "東京都港区六本木7-22-2",
+    "ward_city": "港区",
+    "official_url": "https://www.nact.jp/",
+    "access_url": "https://www.nact.jp/information/access/",
+    "exhibitions_url": "https://www.nact.jp/exhibition_and_event/",
+    "source_url": "https://www.nact.jp/information/access/",
+    "status": "operating"
+  },
+  {
+    "venue_id": "bad0e658-ae39-4784-8bc9-b97b1ed4385e",
+    "name_ja": "森美術館",
+    "category": "art_museum",
+    "address_ja": "東京都港区六本木6-10-1 六本木ヒルズ森タワー53階",
+    "ward_city": "港区",
+    "official_url": "https://www.mori.art.museum/jp/",
+    "access_url": "https://art-view.roppongihills.com/jp/info/",
+    "exhibitions_url": "https://www.mori.art.museum/jp/exhibitions/index.html",
+    "source_url": "https://art-view.roppongihills.com/jp/info/",
+    "status": "operating"
+  },
+  {
+    "venue_id": "8434d992-4372-4221-8100-1698f5914e73",
+    "name_ja": "国立西洋美術館",
+    "category": "art_museum",
+    "address_ja": "東京都台東区上野公園7-7",
+    "ward_city": "台東区",
+    "official_url": "https://www.nmwa.go.jp/jp/",
+    "access_url": "https://www.nmwa.go.jp/jp/visit/map.html",
+    "exhibitions_url": "https://www.nmwa.go.jp/jp/exhibitions/current.html",
+    "source_url": "https://www.nmwa.go.jp/jp/visit/map.html",
+    "status": "operating"
+  }
+]

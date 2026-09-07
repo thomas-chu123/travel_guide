@@ -48,6 +48,15 @@ class ViewportQuery(BaseModel):
 
 class LocationProperties(BaseModel):
     id: str
+    venue_id: str | None = None
+    name_zh: str | None = None
+    address_ja: str | None = None
+    ward_city: str | None = None
+    access_url: str | None = None
+    exhibitions_url: str | None = None
+    source_url: str | None = None
+    verified_at: datetime | None = None
+    status: str = "unverified"
     name_ja: str
     name_en: str | None
     category: str
