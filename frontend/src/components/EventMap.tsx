@@ -6,7 +6,7 @@ import { Protocol } from "pmtiles";
 import "maplibre-gl/dist/maplibre-gl.css";
 import museumIconUrl from "../assets/museum-icon.png";
 
-type Props = { id: string; name_ja: string; name_en: string | null; category: string; area: string | null; location_text: string | null; official_url: string | null; price_min_jpy: number | null; price_max_jpy: number | null; price_note: string | null; exhibition_starts_on: string | null; exhibition_ends_on: string | null; exhibition_period_note: string | null; description_ja: string | null; description_en: string | null };
+type Props = { id: string; name_ja: string; name_en: string | null; category: string; area: string | null; location_text: string | null; official_url: string | null; price_min_jpy: number | null; price_max_jpy: number | null; price_note: string | null; exhibition_starts_on: string | null; exhibition_ends_on: string | null; exhibition_period_note: string | null; opening_hours?: string | null; description_ja: string | null; description_en: string | null };
 export type LocationFeature = Feature<Point, Props>;
 type Collection = FeatureCollection<Point, Props> & { returned: number };
 const api = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000/api/v1";

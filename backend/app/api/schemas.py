@@ -69,6 +69,7 @@ class LocationProperties(BaseModel):
     exhibition_starts_on: str | None
     exhibition_ends_on: str | None
     exhibition_period_note: str | None
+    opening_hours: str | None = None
     description_ja: str | None
     description_en: str | None
 
