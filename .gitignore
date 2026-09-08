@@ -24,3 +24,4 @@ dist/
 data/
 *.pmtiles
 run/
+tmp/
