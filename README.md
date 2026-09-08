@@ -83,3 +83,19 @@ PYTHONPATH=backend backend/.venv/bin/python backend/scripts/enrich_locations.py 
 工具保留完整舊資料及差異，再逐筆更新，並用 `updated_at` 防止覆蓋同時發生的修改。
 批次不是單一交易；中途失敗時，已成功的項目仍保留，可重新產生差異後續跑。
 既有 Walking Map importer 改為僅新增、不覆寫同一 `source_key`，保護人工補齊資料。
+
+## 每日展覽同步
+
+`worker` 每天以東京時間 02:00 讀取 Tokyo Art Beat 與 GO TOKYO，僅保留能比對到
+`tokyo-art-top50:*` 場館的展覽。資料會依場館、標題與展期去重後寫入
+`travel.locations`；過期或來源已移除的 `exhibition-sync:*` 資料會在兩個來源都成功讀取後清除。
+解析器不下載或儲存圖片。
+
+可先執行唯讀預覽，再立即同步：
+
+```bash
+PYTHONPATH=backend backend/.venv/bin/python -m worker.main --once --dry-run
+PYTHONPATH=backend backend/.venv/bin/python -m worker.main --once
+```
+
+排程小時可用 `EXHIBITION_SYNC_HOUR`（0–23）調整，時區固定為 `Asia/Tokyo`。

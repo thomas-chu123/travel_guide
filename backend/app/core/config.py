@@ -1,4 +1,5 @@
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -6,7 +7,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file="../.env",
+        env_file=Path(__file__).resolve().parents[3] / ".env",
         env_file_encoding="utf-8",
         extra="ignore",
     )
@@ -29,6 +30,7 @@ class Settings(BaseSettings):
     supabase_secret_key: str | None = None
     supabase_admin_token: str | None = None
     supabase_allowed_tables_raw: str = Field(default="", validation_alias="SUPABASE_ALLOWED_TABLES")
+    exhibition_sync_hour: int = Field(default=2, ge=0, le=23)
 
     @property
     def allowed_origins(self) -> list[str]:

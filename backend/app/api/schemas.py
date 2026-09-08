@@ -61,6 +61,7 @@ class LocationProperties(BaseModel):
     name_en: str | None
     category: str
     area: str | None
+    location_text: str | None = None
     official_url: str | None
     price_min_jpy: int | None
     price_max_jpy: int | None
