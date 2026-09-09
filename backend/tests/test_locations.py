@@ -74,7 +74,8 @@ def test_locations_paginates_even_when_server_caps_page_and_supports_legacy_sche
 def test_locations_joins_exhibitions_to_venue_coordinates():
     venue_id, exhibition_id = str(uuid4()), str(uuid4())
     venue = {
-        "id": venue_id, "name_ja": "東京都美術館", "name_en": None,
+        "id": venue_id, "name_ja": "東京都美術館", "name_en": "Tokyo Museum",
+        "name_zh": "東京都美術館",
         "category": "art_museum", "area": "東京都", "latitude": 35.7,
         "longitude": 139.7, "official_url": "https://museum.example/",
         "price_min_jpy": None, "price_max_jpy": None, "price_note": None,
@@ -83,10 +84,12 @@ def test_locations_joins_exhibitions_to_venue_coordinates():
     }
     exhibition = {
         "id": exhibition_id, "venue_id": venue_id, "title_ja": "企画展",
-        "title_en": None, "starts_on": "2026-09-01", "ends_on": "2026-10-01",
+        "title_en": "Special Exhibition", "title_zh": "特別展覽",
+        "starts_on": "2026-09-01", "ends_on": "2026-10-01",
         "period_note": "2026-09-01 ～ 2026-10-01", "official_url": "https://event.example/",
         "price_min_jpy": 1000, "price_max_jpy": 1000, "price_note": "一般 1,000円",
-        "description_ja": "説明", "description_en": None,
+        "description_ja": "説明", "description_en": "Description",
+        "description_zh": "說明",
         "source_refs": {"source": {"id": "event-1", "url": "https://source.example/"}},
     }
 
@@ -101,4 +104,9 @@ def test_locations_joins_exhibitions_to_venue_coordinates():
     assert event.id == exhibition_id
     assert event.geometry.coordinates == (139.7, 35.7)
     assert event.properties.location_text == "東京都美術館"
+    assert event.properties.location_text_en == "Tokyo Museum"
+    assert event.properties.location_text_zh == "東京都美術館"
+    assert event.properties.name_en == "Special Exhibition"
+    assert event.properties.name_zh == "特別展覽"
+    assert event.properties.description_zh == "說明"
     assert event.properties.source_url == "https://source.example/"

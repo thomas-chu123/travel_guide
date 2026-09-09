@@ -51,6 +51,8 @@ class LocationProperties(BaseModel):
     venue_id: str | None = None
     name_zh: str | None = None
     address_ja: str | None = None
+    address_en: str | None = None
+    address_zh: str | None = None
     ward_city: str | None = None
     access_url: str | None = None
     exhibitions_url: str | None = None
@@ -62,16 +64,25 @@ class LocationProperties(BaseModel):
     category: str
     area: str | None
     location_text: str | None = None
+    location_text_en: str | None = None
+    location_text_zh: str | None = None
     official_url: str | None
     price_min_jpy: int | None
     price_max_jpy: int | None
     price_note: str | None
+    price_note_en: str | None = None
+    price_note_zh: str | None = None
     exhibition_starts_on: str | None
     exhibition_ends_on: str | None
     exhibition_period_note: str | None
+    exhibition_period_note_en: str | None = None
+    exhibition_period_note_zh: str | None = None
     opening_hours: str | None = None
+    opening_hours_en: str | None = None
+    opening_hours_zh: str | None = None
     description_ja: str | None
     description_en: str | None
+    description_zh: str | None = None
 
 
 class LocationFeature(BaseModel):

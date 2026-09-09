@@ -9,8 +9,9 @@ import museumIconUrl from "../assets/museum-icon.png";
 import parkIconUrl from "../assets/park-icon.png";
 import templeShrineIconUrl from "../assets/temple-shrine-icon.png";
 import type { PlaceCategory } from "../App";
+import { languageTag, messages, type Locale } from "../i18n";
 
-type Props = { id: string; venue_id: string; name_ja: string; name_en: string | null; category: string; area: string | null; address_ja?: string | null; ward_city?: string | null; location_text: string | null; official_url: string | null; price_min_jpy?: number | null; price_max_jpy?: number | null; price_note: string | null; exhibition_starts_on: string | null; exhibition_ends_on: string | null; exhibition_period_note: string | null; opening_hours?: string | null; description_ja: string | null; description_en: string | null };
+type Props = { id: string; venue_id: string; name_ja: string; name_en: string | null; name_zh?: string | null; category: string; area: string | null; address_ja?: string | null; address_en?: string | null; address_zh?: string | null; ward_city?: string | null; location_text: string | null; location_text_en?: string | null; location_text_zh?: string | null; official_url: string | null; price_min_jpy?: number | null; price_max_jpy?: number | null; price_note: string | null; price_note_en?: string | null; price_note_zh?: string | null; exhibition_starts_on: string | null; exhibition_ends_on: string | null; exhibition_period_note: string | null; exhibition_period_note_en?: string | null; exhibition_period_note_zh?: string | null; opening_hours?: string | null; opening_hours_en?: string | null; opening_hours_zh?: string | null; description_ja: string | null; description_en: string | null; description_zh?: string | null };
 export type LocationFeature = Feature<Point, Props>;
 type Collection = FeatureCollection<Point, Props> & { returned: number };
 const api = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000/api/v1";
@@ -18,7 +19,11 @@ const configuredStyleUrl = import.meta.env.VITE_MAP_STYLE_URL;
 const styleUrl = configuredStyleUrl || (import.meta.env.DEV ? "https://gsi-cyberjapan.github.io/optimal_bvmap/style/std.json" : undefined);
 const blankStyle: StyleSpecification = { version: 8, sources: {}, layers: [{ id: "background", type: "background", paint: { "background-color": "#e5edf2" } }] };
 let registered = false;
-const categoryLabel: Record<string, string> = { park: "公園", temple_shrine: "寺社", museum: "美術館・博物館", art_museum: "美術館", gallery: "畫廊", exhibition_space: "展覽空間", exhibition: "展覽", convention_center: "會展中心", zoo_aquarium: "動物園・水族館", food_shopping: "餐飲・購物", point_of_interest: "景點" };
+const categoryLabels: Record<Locale, Record<string, string>> = {
+  "zh-TW": { park: "公園", temple_shrine: "寺廟／神社", museum: "美術館／博物館", art_museum: "美術館", gallery: "畫廊", exhibition_space: "展覽空間", exhibition: "展覽", convention_center: "會展中心", zoo_aquarium: "動物園／水族館", food_shopping: "餐飲／購物", point_of_interest: "景點" },
+  ja: { park: "公園", temple_shrine: "寺院・神社", museum: "美術館・博物館", art_museum: "美術館", gallery: "ギャラリー", exhibition_space: "展示施設", exhibition: "展示", convention_center: "コンベンションセンター", zoo_aquarium: "動物園・水族館", food_shopping: "飲食・ショッピング", point_of_interest: "スポット" },
+  en: { park: "Park", temple_shrine: "Temple / Shrine", museum: "Museum", art_museum: "Art museum", gallery: "Gallery", exhibition_space: "Exhibition space", exhibition: "Exhibition", convention_center: "Convention center", zoo_aquarium: "Zoo / Aquarium", food_shopping: "Food / Shopping", point_of_interest: "Place" },
+};
 const genericPointFilter: maplibregl.FilterSpecification = ["!", ["in", ["get", "category"], ["literal", ["museum", "art_museum", "park", "temple_shrine"]]]];
 const genericArtFilter: maplibregl.FilterSpecification = ["in", ["get", "category"], ["literal", ["gallery", "exhibition_space", "convention_center", "exhibition"]]];
 const interactiveLayers = ["location-hit-areas", "museum-hit-areas", "park-hit-areas", "temple-shrine-hit-areas"];
@@ -43,26 +48,32 @@ function applyCategoryVisibility(map: MapLibreMap, category: PlaceCategory) {
   for (const layer of ["temple-shrine-hit-areas", "temple-shrine-points"]) map.setLayoutProperty(layer, "visibility", templeVisible ? "visible" : "none");
 }
 
-function line(root: HTMLElement, label: string, value: string | null, className?: string) { if (value) { const p = document.createElement("p"), b = document.createElement("strong"); if (className) p.className = className; b.textContent = `${label}　`; p.append(b, value); root.append(p); } }
+function line(root: HTMLElement, label: string, value: string | null | undefined, className?: string) { if (value) { const p = document.createElement("p"), b = document.createElement("strong"); if (className) p.className = className; b.textContent = `${label}　`; p.append(b, value); root.append(p); } }
+export function localizedName(item: LocationFeature, locale: Locale) { const p = item.properties; return locale === "zh-TW" ? p.name_zh || p.name_ja || p.name_en || "" : locale === "en" ? p.name_en || p.name_ja || p.name_zh || "" : p.name_ja || p.name_en || p.name_zh || ""; }
+export function localizedDescription(item: LocationFeature, locale: Locale) { const p = item.properties; return locale === "zh-TW" ? p.description_zh || p.description_ja || p.description_en : locale === "en" ? p.description_en || p.description_ja || p.description_zh : p.description_ja || p.description_en || p.description_zh; }
+export function localizedLocation(item: LocationFeature, locale: Locale) { const p = item.properties; if (p.category === "exhibition") return locale === "zh-TW" ? p.location_text_zh || p.location_text || p.location_text_en : locale === "en" ? p.location_text_en || p.location_text || p.location_text_zh : p.location_text || p.location_text_en || p.location_text_zh; return locale === "zh-TW" ? p.address_zh || p.location_text || p.address_ja || p.address_en || p.area : locale === "en" ? p.address_en || p.location_text || p.address_ja || p.address_zh || p.area : p.address_ja || p.location_text || p.address_en || p.address_zh || p.area; }
 export function googleMapsReviewsUrl(p: Props) {
   const venueName = p.category === "exhibition" ? p.location_text || p.name_ja : p.name_ja;
   const query = [venueName, p.address_ja || p.ward_city || p.area].filter(Boolean).join(" ");
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
 }
-function googleMapsLink(p: Props) { const a = document.createElement("a"); a.href = googleMapsReviewsUrl(p); a.target = "_blank"; a.rel = "noopener noreferrer"; a.textContent = "在 Google Maps 查看評論 ↗"; return a; }
-function popup(p: Props, includeGoogleMaps = false) { const root = document.createElement("article"); root.className = "location-popup"; const h = document.createElement("h2"); h.textContent = p.name_ja; root.append(h); if (p.name_en) { const en = document.createElement("p"); en.className = "location-popup-en"; en.textContent = p.name_en; root.append(en); } const meta = document.createElement("p"); meta.className = "location-popup-meta"; meta.textContent = `${categoryLabel[p.category] ?? "景點"}${p.area ? ` · ${p.area}` : ""}`; root.append(meta); line(root, "地點", p.location_text); line(root, "說明", p.description_ja || p.description_en, "popup-description"); const minPrice = p.price_min_jpy, maxPrice = p.price_max_jpy; const price = p.price_note || (typeof minPrice === "number" ? `¥${minPrice.toLocaleString("ja-JP")}${typeof maxPrice === "number" && maxPrice !== minPrice ? `–¥${maxPrice.toLocaleString("ja-JP")}` : ""}` : null); line(root, "價格", price); line(root, "展期", p.exhibition_period_note || (p.exhibition_starts_on ? `${p.exhibition_starts_on}${p.exhibition_ends_on ? ` ～ ${p.exhibition_ends_on}` : ""}` : null)); if (p.official_url) { const a = document.createElement("a"); a.href = p.official_url; a.target = "_blank"; a.rel = "noreferrer"; a.textContent = "展覽網站 ↗"; root.append(a); } if (includeGoogleMaps) root.append(googleMapsLink(p)); return root; }
+function googleMapsLink(p: Props, locale: Locale) { const a = document.createElement("a"); a.href = googleMapsReviewsUrl(p); a.target = "_blank"; a.rel = "noopener noreferrer"; a.textContent = messages[locale].mapsReviews; return a; }
+function popup(item: LocationFeature, locale: Locale, includeGoogleMaps = false) { const p = item.properties, t = messages[locale], root = document.createElement("article"); root.className = "location-popup"; const h = document.createElement("h2"); h.textContent = localizedName(item, locale); root.append(h); const fallbackName = locale === "ja" ? p.name_en : p.name_ja; if (fallbackName && fallbackName !== h.textContent) { const secondary = document.createElement("p"); secondary.className = "location-popup-en"; secondary.textContent = fallbackName; root.append(secondary); } const meta = document.createElement("p"); meta.className = "location-popup-meta"; meta.textContent = `${categoryLabels[locale][p.category] ?? t.place}${p.area ? ` · ${p.area}` : ""}`; root.append(meta); line(root, t.location, localizedLocation(item, locale)); line(root, t.description, localizedDescription(item, locale), "popup-description"); const tag = languageTag(locale), minPrice = p.price_min_jpy, maxPrice = p.price_max_jpy, localizedPrice = locale === "zh-TW" ? p.price_note_zh : locale === "en" ? p.price_note_en : p.price_note; const price = localizedPrice || p.price_note || (typeof minPrice === "number" ? `¥${minPrice.toLocaleString(tag)}${typeof maxPrice === "number" && maxPrice !== minPrice ? `–¥${maxPrice.toLocaleString(tag)}` : ""}` : null); line(root, t.price, price); const localizedPeriod = locale === "zh-TW" ? p.exhibition_period_note_zh : locale === "en" ? p.exhibition_period_note_en : p.exhibition_period_note; line(root, t.period, localizedPeriod || p.exhibition_period_note || (p.exhibition_starts_on ? `${p.exhibition_starts_on}${p.exhibition_ends_on ? ` ～ ${p.exhibition_ends_on}` : ""}` : null)); if (p.official_url) { const a = document.createElement("a"); a.href = p.official_url; a.target = "_blank"; a.rel = "noreferrer"; a.textContent = t.exhibitionSite; root.append(a); } if (includeGoogleMaps) root.append(googleMapsLink(p, locale)); return root; }
 function venueKey(feature: LocationFeature) { return feature.properties.venue_id || feature.properties.id; }
-function venuePopup(items: LocationFeature[]) { const venue = items.find((item) => item.properties.category !== "exhibition"); const exhibitions = items.filter((item) => item.properties.category === "exhibition").sort((a, b) => (a.properties.exhibition_starts_on ?? "").localeCompare(b.properties.exhibition_starts_on ?? "")); const root = document.createElement("article"); root.className = "location-popup venue-popup"; if (venue) root.append(popup(venue.properties, true)); else if (exhibitions[0]) { const h = document.createElement("h2"); h.textContent = exhibitions[0].properties.location_text || "展覽場館"; root.append(h, googleMapsLink(exhibitions[0].properties)); } if (exhibitions.length) { const title = document.createElement("h3"); title.textContent = `展覽資訊（${exhibitions.length}）`; root.append(title); const list = document.createElement("div"); list.className = "exhibition-list"; for (const exhibition of exhibitions) list.append(popup(exhibition.properties)); root.append(list); } return root; }
+function venuePopup(items: LocationFeature[], locale: Locale) { const t = messages[locale], venue = items.find((item) => item.properties.category !== "exhibition"), exhibitions = items.filter((item) => item.properties.category === "exhibition").sort((a, b) => (a.properties.exhibition_starts_on ?? "").localeCompare(b.properties.exhibition_starts_on ?? "")), root = document.createElement("article"); root.className = "location-popup venue-popup"; if (venue) root.append(popup(venue, locale, true)); else if (exhibitions[0]) { const h = document.createElement("h2"); h.textContent = localizedLocation(exhibitions[0], locale) || t.venue; root.append(h, googleMapsLink(exhibitions[0].properties, locale)); } if (exhibitions.length) { const title = document.createElement("h3"); title.textContent = `${t.exhibitions}（${exhibitions.length.toLocaleString(languageTag(locale))}）`; root.append(title); const list = document.createElement("div"); list.className = "exhibition-list"; for (const exhibition of exhibitions) list.append(popup(exhibition, locale)); root.append(list); } return root; }
 
-export function EventMap({ category, onLocationsChange }: { category: PlaceCategory; onLocationsChange: (items: LocationFeature[]) => void }) {
+export function EventMap({ category, locale, onLocationsChange }: { category: PlaceCategory; locale: Locale; onLocationsChange: (items: LocationFeature[]) => void }) {
   const element = useRef<HTMLDivElement>(null), mapRef = useRef<MapLibreMap | null>(null);
   const featuresRef = useRef<LocationFeature[]>([]);
+  const localeRef = useRef(locale), activePopupRef = useRef<maplibregl.Popup | null>(null), activeItemsRef = useRef<LocationFeature[] | null>(null);
   const categoryRef = useRef(category);
   categoryRef.current = category;
-  const [status, setStatus] = useState("載入東京景點中…"), [error, setError] = useState<string | null>(null);
+  localeRef.current = locale;
+  const [status, setStatus] = useState<string>(messages[locale].loading), [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const logPrefix = "[EventMap]";
+    const t = messages[localeRef.current];
     const startedAt = performance.now();
     const elapsed = () => `${Math.round(performance.now() - startedAt)}ms`;
 
@@ -140,9 +151,9 @@ export function EventMap({ category, onLocationsChange }: { category: PlaceCateg
     map.on("sourcedataloading", (event) => console.debug(`${logPrefix} event: sourcedataloading`, { elapsed: elapsed(), sourceId: event.sourceId, sourceDataType: event.sourceDataType }));
     map.on("sourcedata", (event) => console.debug(`${logPrefix} event: sourcedata`, { elapsed: elapsed(), sourceId: event.sourceId, sourceDataType: event.sourceDataType, isSourceLoaded: event.isSourceLoaded, resourceTiming: event.resourceTiming }));
     map.on("error", (event) => {
-      const message = event.error?.message ?? "未知錯誤";
+      const message = event.error?.message ?? "Unknown error";
       console.error(`${logPrefix} event: error`, { elapsed: elapsed(), message, error: event.error, event });
-      setError(`底圖載入失敗：${message}`);
+      setError(`${t.mapLoadFailed}: ${message}`);
     });
 
     map.on("load", async () => {
@@ -199,13 +210,17 @@ export function EventMap({ category, onLocationsChange }: { category: PlaceCateg
           const items = grouped.get(groupKey) ?? [feature];
           activePopup?.remove();
           activeFeatureId = groupKey;
+          activeItemsRef.current = items;
           activePopup = new maplibregl.Popup({ closeButton: true, maxWidth: "420px", offset: 22 })
             .setLngLat(coordinates)
-            .setDOMContent(venuePopup(items))
+            .setDOMContent(venuePopup(items, localeRef.current))
             .addTo(map);
+          activePopupRef.current = activePopup;
           activePopup.on("close", () => {
             activeFeatureId = null;
             activePopup = null;
+            activePopupRef.current = null;
+            activeItemsRef.current = null;
           });
           console.debug(`${logPrefix} location shown`, { id: featureId, coordinates, groupedItems: items.length });
         };
@@ -223,7 +238,7 @@ export function EventMap({ category, onLocationsChange }: { category: PlaceCateg
         console.info(`${logPrefix} location layers configured`, { elapsed: elapsed(), interactiveLayers });
       } catch (layerError) {
         console.error(`${logPrefix} failed to configure location layers`, { elapsed: elapsed(), error: layerError });
-        setError(`景點圖層初始化失敗：${layerError instanceof Error ? layerError.message : String(layerError)}`);
+        setError(`${t.layerFailed}: ${layerError instanceof Error ? layerError.message : String(layerError)}`);
         return;
       }
 
@@ -253,10 +268,10 @@ export function EventMap({ category, onLocationsChange }: { category: PlaceCateg
         source.setData(data);
         console.info(`${logPrefix} locations applied to map`, { elapsed: elapsed(), coordinateGroups: grouped.size });
         updateVisibleExhibitions();
-        setStatus(`${data.returned.toLocaleString("ja-JP")} 個東京景點 · 點擊圖示查看資訊`);
+        setStatus(`${data.returned.toLocaleString(languageTag(localeRef.current))} ${messages[localeRef.current].clickHint}`);
       } catch (requestError) {
         console.error(`${logPrefix} locations request failed`, { elapsed: elapsed(), url: locationsUrl, error: requestError });
-        setStatus("景點 API 尚未連線。請確認 backend 與 Supabase 設定。");
+        setStatus(messages[localeRef.current].apiUnavailable);
       }
     });
 
@@ -264,6 +279,8 @@ export function EventMap({ category, onLocationsChange }: { category: PlaceCateg
       console.info(`${logPrefix} cleanup`, { elapsed: elapsed() });
       map.remove();
       mapRef.current = null;
+      activePopupRef.current = null;
+      activeItemsRef.current = null;
     };
   }, [onLocationsChange]);
 
@@ -274,5 +291,12 @@ export function EventMap({ category, onLocationsChange }: { category: PlaceCateg
     const bounds = map.getBounds();
     onLocationsChange(featuresRef.current.filter((feature) => bounds.contains(feature.geometry.coordinates as [number, number])));
   }, [category, onLocationsChange]);
+  useEffect(() => {
+    const t = messages[locale];
+    const count = featuresRef.current.length;
+    setStatus(count ? `${count.toLocaleString(languageTag(locale))} ${t.clickHint}` : t.loading);
+    const popup = activePopupRef.current, items = activeItemsRef.current;
+    if (popup?.isOpen() && items) popup.setDOMContent(venuePopup(items, locale));
+  }, [locale]);
   return <div className="map-panel"><div ref={element} className="map-canvas" /><p className="map-status">{status}</p>{error && <p className="map-hint">{error}</p>}</div>;
 }

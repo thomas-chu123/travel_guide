@@ -22,6 +22,11 @@ dev = [
   "pytest>=8.3,<9.0",
   "ruff>=0.8,<1.0",
 ]
+translation = [
+  "argostranslate>=1.9,<2.0",
+  "certifi>=2024.8.30",
+  "opencc-python-reimplemented>=0.1.7,<1.0",
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["app", "worker"]
