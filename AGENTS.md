@@ -44,6 +44,9 @@ limited to features inside the current map viewport.
   categories appear at a consistent visual scale.
 - The generic `location-points` circle layer must explicitly exclude `museum`, `art_museum`,
   `park`, and `temple_shrine`; otherwise duplicate colored dots appear beneath image markers.
+- Do not nest or combine MapLibre legacy filters with expression filters and then silence the
+  TypeScript error with a cast. Category selection uses layer `visibility`; filters on a layer
+  must remain a single valid filter syntax.
 - Do not mistake icons rendered by the GSI basemap for application marker layers. Validate the
   `museum-points`, `park-points`, and `temple-shrine-points` layers themselves.
 

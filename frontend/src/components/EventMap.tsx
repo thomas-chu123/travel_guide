@@ -19,6 +19,20 @@ const styleUrl = configuredStyleUrl || (import.meta.env.DEV ? "https://gsi-cyber
 const blankStyle: StyleSpecification = { version: 8, sources: {}, layers: [{ id: "background", type: "background", paint: { "background-color": "#e5edf2" } }] };
 let registered = false;
 const categoryLabel: Record<string, string> = { park: "公園", temple_shrine: "寺社", museum: "美術館・博物館", art_museum: "美術館", gallery: "畫廊", exhibition_space: "展覽空間", exhibition: "展覽", convention_center: "會展中心", zoo_aquarium: "動物園・水族館", food_shopping: "餐飲・購物", point_of_interest: "景點" };
+const genericPointFilter: maplibregl.FilterSpecification = ["!", ["in", ["get", "category"], ["literal", ["museum", "art_museum", "park", "temple_shrine"]]]];
+const genericArtFilter: maplibregl.FilterSpecification = ["in", ["get", "category"], ["literal", ["gallery", "exhibition_space", "convention_center", "exhibition"]]];
+
+function applyCategoryVisibility(map: MapLibreMap, category: PlaceCategory) {
+  if (!map.getLayer("location-points")) return;
+  const artVisible = category === "all" || category === "art";
+  const parkVisible = category === "all" || category === "park";
+  const templeVisible = category === "all" || category === "temple_shrine";
+  map.setFilter("location-points", category === "art" ? genericArtFilter : genericPointFilter);
+  map.setLayoutProperty("location-points", "visibility", artVisible ? "visible" : "none");
+  for (const layer of ["museum-hit-areas", "museum-points"]) map.setLayoutProperty(layer, "visibility", artVisible ? "visible" : "none");
+  map.setLayoutProperty("park-points", "visibility", parkVisible ? "visible" : "none");
+  map.setLayoutProperty("temple-shrine-points", "visibility", templeVisible ? "visible" : "none");
+}
 
 function line(root: HTMLElement, label: string, value: string | null, className?: string) { if (value) { const p = document.createElement("p"), b = document.createElement("strong"); if (className) p.className = className; b.textContent = `${label}　`; p.append(b, value); root.append(p); } }
 function popup(p: Props) { const root = document.createElement("article"); root.className = "location-popup"; const h = document.createElement("h2"); h.textContent = p.name_ja; root.append(h); if (p.name_en) { const en = document.createElement("p"); en.className = "location-popup-en"; en.textContent = p.name_en; root.append(en); } const meta = document.createElement("p"); meta.className = "location-popup-meta"; meta.textContent = `${categoryLabel[p.category] ?? "景點"}${p.area ? ` · ${p.area}` : ""}`; root.append(meta); line(root, "地點", p.location_text); line(root, "說明", p.description_ja || p.description_en, "popup-description"); const price = p.price_note || (p.price_min_jpy !== null ? `¥${p.price_min_jpy.toLocaleString("ja-JP")}${p.price_max_jpy !== null && p.price_max_jpy !== p.price_min_jpy ? `–¥${p.price_max_jpy.toLocaleString("ja-JP")}` : ""}` : null); line(root, "價格", price); line(root, "展期", p.exhibition_period_note || (p.exhibition_starts_on ? `${p.exhibition_starts_on}${p.exhibition_ends_on ? ` ～ ${p.exhibition_ends_on}` : ""}` : null)); if (p.official_url) { const a = document.createElement("a"); a.href = p.official_url; a.target = "_blank"; a.rel = "noreferrer"; a.textContent = "展覽網站 ↗"; root.append(a); } return root; }
@@ -28,6 +42,8 @@ function venuePopup(items: LocationFeature[]) { const venue = items.find((item) 
 export function EventMap({ category, onLocationsChange }: { category: PlaceCategory; onLocationsChange: (items: LocationFeature[]) => void }) {
   const element = useRef<HTMLDivElement>(null), mapRef = useRef<MapLibreMap | null>(null);
   const featuresRef = useRef<LocationFeature[]>([]);
+  const categoryRef = useRef(category);
+  categoryRef.current = category;
   const [status, setStatus] = useState("載入東京景點中…"), [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -119,7 +135,7 @@ export function EventMap({ category, onLocationsChange }: { category: PlaceCateg
       console.info(`${logPrefix} configuring location layers`, { elapsed: elapsed() });
       try {
         map.addSource("locations", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
-        map.addLayer({ id: "location-points", type: "circle", source: "locations", filter: ["!", ["in", ["get", "category"], ["literal", ["museum", "art_museum", "park", "temple_shrine"]]]], paint: { "circle-color": ["match", ["get", "category"], "exhibition", "#2563eb", "food_shopping", "#e95d75", "#2563eb"], "circle-radius": 6, "circle-stroke-color": "#fff", "circle-stroke-width": 1.5 } });
+        map.addLayer({ id: "location-points", type: "circle", source: "locations", filter: genericPointFilter, paint: { "circle-color": ["match", ["get", "category"], "exhibition", "#2563eb", "food_shopping", "#e95d75", "#2563eb"], "circle-radius": 6, "circle-stroke-color": "#fff", "circle-stroke-width": 1.5 } });
         const museumFilter: maplibregl.FilterSpecification = ["any", ["==", "category", "museum"], ["==", "category", "art_museum"]];
         map.addLayer({ id: "museum-hit-areas", type: "circle", source: "locations", filter: museumFilter, paint: { "circle-radius": 28, "circle-color": "rgba(0,0,0,0.01)", "circle-stroke-width": 0 } });
 
@@ -134,6 +150,7 @@ export function EventMap({ category, onLocationsChange }: { category: PlaceCateg
           map.addImage(`${name}-icon`, image.data);
           map.addLayer({ id: `${name}-points`, type: "symbol", source: "locations", filter: ["==", "category", itemCategory], layout: { "icon-image": `${name}-icon`, "icon-size": 0.15, "icon-allow-overlap": true, "icon-ignore-placement": true } });
         }
+        applyCategoryVisibility(map, categoryRef.current);
 
         const interactiveLayers = ["location-points", "museum-hit-areas", "museum-points", "park-points", "temple-shrine-points"];
         const openPopup = (event: maplibregl.MapLayerMouseEvent) => {
@@ -202,20 +219,7 @@ export function EventMap({ category, onLocationsChange }: { category: PlaceCateg
   useEffect(() => {
     const map = mapRef.current;
     if (!map?.getLayer("location-points")) return;
-    const art = ["museum", "art_museum", "gallery", "exhibition_space", "convention_center", "exhibition"];
-    const selected = category === "art" ? art : category === "all" ? null : [category];
-    const selectedFilter: maplibregl.FilterSpecification | null = selected ? ["in", ["get", "category"], ["literal", selected]] : null;
-    const baseFilters: Record<string, maplibregl.FilterSpecification> = {
-      "location-points": ["!", ["in", ["get", "category"], ["literal", ["museum", "art_museum", "park", "temple_shrine"]]]],
-      "museum-hit-areas": ["in", ["get", "category"], ["literal", ["museum", "art_museum"]]],
-      "museum-points": ["in", ["get", "category"], ["literal", ["museum", "art_museum"]]],
-      "park-points": ["==", "category", "park"],
-      "temple-shrine-points": ["==", "category", "temple_shrine"],
-    };
-    for (const [layer, base] of Object.entries(baseFilters)) {
-      const filter = (selectedFilter ? ["all", base, selectedFilter] : base) as maplibregl.FilterSpecification;
-      map.setFilter(layer, filter);
-    }
+    applyCategoryVisibility(map, category);
     const bounds = map.getBounds();
     onLocationsChange(featuresRef.current.filter((feature) => bounds.contains(feature.geometry.coordinates as [number, number])));
   }, [category, onLocationsChange]);
