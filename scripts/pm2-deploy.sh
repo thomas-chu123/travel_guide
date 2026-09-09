@@ -52,7 +52,11 @@ if [[ ! -x "$PYTHON" ]]; then
 fi
 
 echo "Installing backend dependencies..."
-"$PIP" install -q -e "$BACKEND_DIR"
+"$PIP" install -q -e "$BACKEND_DIR[translation]"
+(
+  cd "$BACKEND_DIR"
+  "$PYTHON" scripts/translate_supabase_content.py --install-models
+)
 
 echo "Applying database migrations..."
 (

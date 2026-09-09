@@ -10,12 +10,19 @@ from zoneinfo import ZoneInfo
 import httpx
 
 from app.core.config import settings
+from app.services.offline_translation import ArgosTranslator
 from app.services.supabase import SupabaseRestClient
 from worker.sources import go_tokyo, tokyo_art_beat
 from worker.sources.common import Exhibition, normalized_name
 
 TOKYO = ZoneInfo("Asia/Tokyo")
 SYNC_PREFIX = "exhibition-sync:"
+TRANSLATION_FIELDS = {
+    "title_ja": ("title_en", "title_zh"),
+    "description_ja": ("description_en", "description_zh"),
+    "price_note": ("price_note_en", "price_note_zh"),
+    "period_note": ("period_note_en", "period_note_zh"),
+}
 
 
 @dataclass(slots=True)
@@ -27,6 +34,7 @@ class SyncResult:
     unmatched_venues_sample: list[str]
     upserted: int = 0
     deleted: int = 0
+    translated_fields: int = 0
 
 
 def _venue_candidates(name: str) -> set[str]:
@@ -132,15 +140,22 @@ def build_row(exhibition: Exhibition, venue: dict[str, Any], verified_at: dateti
         "venue_id": venue["id"],
         "title_ja": exhibition.title,
         "title_en": None,
+        "title_zh": None,
         "official_url": exhibition.official_url,
         "price_min_jpy": exhibition.price_min_jpy,
         "price_max_jpy": exhibition.price_max_jpy,
         "price_note": exhibition.price_note,
+        "price_note_en": None,
+        "price_note_zh": None,
         "starts_on": start,
         "ends_on": end,
         "period_note": period,
+        "period_note_en": None,
+        "period_note_zh": None,
         "description_ja": exhibition.description,
         "description_en": None,
+        "description_zh": None,
+        "translation_meta": {},
         "sources": exhibition.source.split("+"),
         "source_refs": {
             source: {"id": source_id, "url": source_url}
@@ -153,6 +168,39 @@ def build_row(exhibition: Exhibition, venue: dict[str, Any], verified_at: dateti
         "status": "operating",
         "updated_at": verified_at.isoformat(),
     }
+
+
+def add_translations(
+    row: dict[str, Any],
+    existing: dict[str, Any] | None,
+    translator: Any,
+    translated_at: datetime,
+) -> int:
+    """Fill translated fields, reusing translations whose Japanese source is unchanged."""
+    metadata = dict((existing or {}).get("translation_meta") or {})
+    translated_fields = 0
+    for source_field, (english_field, chinese_field) in TRANSLATION_FIELDS.items():
+        source = row.get(source_field)
+        if not isinstance(source, str) or not source.strip():
+            continue
+        unchanged = existing is not None and existing.get(source_field) == source
+        for target, target_field in (("en", english_field), ("zh", chinese_field)):
+            previous = existing.get(target_field) if unchanged and existing else None
+            if previous:
+                row[target_field] = previous
+                continue
+            row[target_field] = translator.translate(source.strip(), target)
+            metadata[target_field] = {
+                "provider": "argos-translate",
+                "source_field": source_field,
+                "source_language": "ja",
+                "target_language": "zh-TW" if target == "zh" else "en",
+                "translated_at": translated_at.isoformat(),
+                "reviewed": False,
+            }
+            translated_fields += 1
+    row["translation_meta"] = metadata
+    return translated_fields
 
 
 async def _read_all(
@@ -202,6 +250,16 @@ async def sync_exhibitions(*, dry_run: bool = False) -> SyncResult:
 
     now = datetime.now(TOKYO)
     rows = [build_row(exhibition, venue, now) for exhibition, venue in merged]
+    existing = await _read_all(
+        database, filter_params={"source_key": f"like.{SYNC_PREFIX}*"}, table="exhibitions"
+    )
+    existing_by_key = {row["source_key"]: row for row in existing}
+    # Constructing the translator validates all local models before the first write.
+    translator = ArgosTranslator()
+    for row in rows:
+        result.translated_fields += add_translations(
+            row, existing_by_key.get(row["source_key"]), translator, now
+        )
     for offset in range(0, len(rows), 100):
         batch = rows[offset : offset + 100]
         await database.request(
@@ -214,9 +272,6 @@ async def sync_exhibitions(*, dry_run: bool = False) -> SyncResult:
         )
         result.upserted += len(batch)
 
-    existing = await _read_all(
-        database, filter_params={"source_key": f"like.{SYNC_PREFIX}*"}, table="exhibitions"
-    )
     current_keys = {row["source_key"] for row in rows}
     stale_ids = [row["id"] for row in existing if row["source_key"] not in current_keys]
     for offset in range(0, len(stale_ids), 100):

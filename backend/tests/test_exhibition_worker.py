@@ -6,7 +6,22 @@ from worker.main import next_run
 from worker.sources.common import Exhibition, parse_jpy
 from worker.sources.go_tokyo import parse as parse_go_tokyo
 from worker.sources.tokyo_art_beat import parse as parse_tokyo_art_beat
-from worker.sync_exhibitions import _event_key, build_row, match_venue, merge_exhibitions
+from worker.sync_exhibitions import (
+    _event_key,
+    add_translations,
+    build_row,
+    match_venue,
+    merge_exhibitions,
+)
+
+
+class FakeTranslator:
+    def __init__(self) -> None:
+        self.calls: list[tuple[str, str]] = []
+
+    def translate(self, text: str, target: str) -> str:
+        self.calls.append((text, target))
+        return f"{target}:{text}"
 
 
 def test_go_tokyo_parser_extracts_period_description_and_price():
@@ -103,3 +118,37 @@ def test_event_identity_survives_corrected_end_date():
     assert _event_key(item, venue) == _event_key(
         replace(item, ends_on=date(2026, 10, 15)), venue
     )
+
+
+def test_translation_reuses_unchanged_values_and_translates_changed_source():
+    now = datetime(2026, 9, 9, tzinfo=ZoneInfo("Asia/Tokyo"))
+    row = {
+        "title_ja": "企画展",
+        "title_en": None,
+        "title_zh": None,
+        "description_ja": "新しい説明",
+        "description_en": None,
+        "description_zh": None,
+        "price_note": None,
+        "period_note": None,
+        "translation_meta": {},
+    }
+    existing = {
+        "title_ja": "企画展",
+        "title_en": "Official exhibition",
+        "title_zh": "官方展覽",
+        "description_ja": "古い説明",
+        "description_en": "Old description",
+        "description_zh": "舊說明",
+        "translation_meta": {"title_en": {"reviewed": True}},
+    }
+    translator = FakeTranslator()
+
+    count = add_translations(row, existing, translator, now)
+
+    assert count == 2
+    assert row["title_en"] == "Official exhibition"
+    assert row["title_zh"] == "官方展覽"
+    assert row["description_en"] == "en:新しい説明"
+    assert row["description_zh"] == "zh:新しい説明"
+    assert translator.calls == [("新しい説明", "en"), ("新しい説明", "zh")]
