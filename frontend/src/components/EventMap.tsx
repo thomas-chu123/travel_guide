@@ -183,16 +183,34 @@ export function EventMap({ category, onLocationsChange }: { category: PlaceCateg
             return aPoint.dist(pixel) - bPoint.dist(pixel);
           });
         };
+        let activeFeatureId: string | null = null;
+        let activePopup: maplibregl.Popup | null = null;
+        const showLocation = (feature: LocationFeature) => {
+          const featureId = feature.properties.id;
+          if (activeFeatureId === featureId && activePopup?.isOpen()) return;
+          const coordinates = feature.geometry.coordinates as [number, number];
+          const items = grouped.get(coordinateKey(coordinates)) ?? [feature];
+          activePopup?.remove();
+          activeFeatureId = featureId;
+          activePopup = new maplibregl.Popup({ closeButton: true, maxWidth: "420px", offset: 22 })
+            .setLngLat(coordinates)
+            .setDOMContent(venuePopup(items))
+            .addTo(map);
+          activePopup.on("close", () => {
+            activeFeatureId = null;
+            activePopup = null;
+          });
+          console.debug(`${logPrefix} location shown`, { id: featureId, coordinates, groupedItems: items.length });
+        };
         map.on("mousemove", (event) => {
-          map.getCanvas().style.cursor = nearbyFeatures(event.point).length ? "pointer" : "";
+          const feature = nearbyFeatures(event.point)[0];
+          map.getCanvas().style.cursor = feature ? "pointer" : "";
+          if (feature && event.originalEvent.buttons === 0) showLocation(feature);
         });
         map.on("click", (event) => {
           const feature = nearbyFeatures(event.point)[0];
           if (!feature) return;
-          const coordinates = feature.geometry.coordinates as [number, number];
-          const items = grouped.get(coordinateKey(coordinates)) ?? [feature];
-          console.debug(`${logPrefix} location clicked`, { id: feature.id, coordinates, groupedItems: items.length });
-          new maplibregl.Popup({ closeButton: true, maxWidth: "420px", offset: 22 }).setLngLat(coordinates).setDOMContent(venuePopup(items)).addTo(map);
+          showLocation(feature);
         });
         map.on("moveend", updateVisibleExhibitions);
         console.info(`${logPrefix} location layers configured`, { elapsed: elapsed(), interactiveLayers });
