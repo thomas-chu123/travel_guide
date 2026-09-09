@@ -63,7 +63,7 @@ export function App() {
           <h3>{item.properties.name_ja}</h3>
           <p className="exhibition-card-venue">{item.properties.location_text || item.properties.area || categoryLabels[category]}</p>
           <dl>
-            {item.properties.official_url && <div><dt>URL</dt><dd><a href={item.properties.official_url} target="_blank" rel="noreferrer">{item.properties.official_url}</a></dd></div>}
+            {item.properties.official_url && <div><dt>URL</dt><dd><a href={item.properties.official_url} target="_blank" rel="noreferrer">官方網站</a></dd></div>}
             {item.properties.category === "exhibition" && <><div><dt>金額</dt><dd>{price(item)}</dd></div><div><dt>展期</dt><dd>{period(item)}</dd></div></>}
             <div><dt>營業時間</dt><dd>{openingHours(item)}</dd></div>
             <div><dt>評論</dt><dd><a href={googleMapsReviewsUrl(item.properties)} target="_blank" rel="noopener noreferrer">在 Google Maps 查看評論 ↗</a></dd></div>
