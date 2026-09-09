@@ -20,6 +20,7 @@ class Exhibition:
     price_max_jpy: int | None = None
     price_note: str | None = None
     official_url: str | None = None
+    source_refs: tuple[tuple[str, str, str], ...] = ()
 
 
 def clean_text(value: str | None) -> str | None:

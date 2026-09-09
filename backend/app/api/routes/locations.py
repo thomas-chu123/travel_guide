@@ -18,23 +18,29 @@ router = APIRouter()
 async def list_locations(
     client: SupabaseRestClient = Depends(get_client),
 ) -> LocationFeatureCollection:
-    rows: list[dict[str, Any]] = []
-    try:
+    async def read_all(table: str, params: dict[str, str]) -> list[dict[str, Any]]:
+        rows: list[dict[str, Any]] = []
         while True:
             page = await client.request(
                 "GET",
-                "locations",
-                # Selecting * also works before the additive venue migration is applied.
-                params={"select": "*", "order": "id", "limit": "500", "offset": str(len(rows))},
+                table,
+                params={**params, "limit": "500", "offset": str(len(rows))},
                 profile="travel",
             )
             if not page:
-                break
+                return rows
             rows.extend(page)
+
+    try:
+        rows = await read_all(
+            "locations", {"select": "*", "category": "neq.exhibition", "order": "id"}
+        )
+        exhibitions = await read_all("exhibitions", {"select": "*", "order": "id"})
     except SupabaseRestError as error:
         raise HTTPException(status_code=502, detail="Unable to load travel locations") from error
 
-    features = [
+    venues = {str(row["id"]): row for row in rows}
+    features: list[LocationFeature] = [
         LocationFeature(
             id=str(row["id"]),
             geometry=PointGeometry(coordinates=(row["longitude"], row["latitude"])),
@@ -44,4 +50,41 @@ async def list_locations(
         )
         for row in rows
     ]
+    for exhibition in exhibitions:
+        venue = venues.get(str(exhibition["venue_id"]))
+        if not venue:
+            continue
+        refs = exhibition.get("source_refs") or {}
+        source_url = next(
+            (ref.get("url") for ref in refs.values() if isinstance(ref, dict) and ref.get("url")),
+            None,
+        )
+        properties = {
+            **venue,
+            "id": str(exhibition["id"]),
+            "venue_id": str(venue["id"]),
+            "name_ja": exhibition["title_ja"],
+            "name_en": exhibition.get("title_en"),
+            "category": "exhibition",
+            "location_text": venue["name_ja"],
+            "official_url": exhibition.get("official_url"),
+            "price_min_jpy": exhibition.get("price_min_jpy"),
+            "price_max_jpy": exhibition.get("price_max_jpy"),
+            "price_note": exhibition.get("price_note"),
+            "exhibition_starts_on": exhibition.get("starts_on"),
+            "exhibition_ends_on": exhibition.get("ends_on"),
+            "exhibition_period_note": exhibition.get("period_note"),
+            "description_ja": exhibition.get("description_ja"),
+            "description_en": exhibition.get("description_en"),
+            "source_url": source_url,
+            "verified_at": exhibition.get("verified_at"),
+            "status": exhibition.get("status", "operating"),
+        }
+        features.append(
+            LocationFeature(
+                id=str(exhibition["id"]),
+                geometry=PointGeometry(coordinates=(venue["longitude"], venue["latitude"])),
+                properties=LocationProperties(**properties),
+            )
+        )
     return LocationFeatureCollection(features=features, returned=len(features))

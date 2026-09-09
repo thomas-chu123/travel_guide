@@ -66,7 +66,6 @@ def _event_key(exhibition: Exhibition, venue: dict[str, Any]) -> str:
             str(venue["id"]),
             normalized_name(exhibition.title),
             exhibition.starts_on.isoformat() if exhibition.starts_on else "",
-            exhibition.ends_on.isoformat() if exhibition.ends_on else "",
         )
     )
     return SYNC_PREFIX + hashlib.sha256(identity.encode()).hexdigest()[:32]
@@ -82,6 +81,22 @@ def merge_exhibitions(items: list[tuple[Exhibition, dict[str, Any]]]) -> list[tu
             continue
         old = previous[0]
         sources = "+".join(sorted(set(old.source.split("+")) | {exhibition.source}))
+        refs = {
+            source: {"id": source_id, "url": source_url}
+            for source, source_id, source_url in (
+                old.source_refs
+                or ((old.source, old.source_id, old.source_url),)
+            )
+        }
+        refs.update(
+            {
+                source: {"id": source_id, "url": source_url}
+                for source, source_id, source_url in (
+                    exhibition.source_refs
+                    or ((exhibition.source, exhibition.source_id, exhibition.source_url),)
+                )
+            }
+        )
         merged[key] = (
             Exhibition(
                 source=sources,
@@ -98,6 +113,10 @@ def merge_exhibitions(items: list[tuple[Exhibition, dict[str, Any]]]) -> list[tu
                 price_max_jpy=old.price_max_jpy if old.price_max_jpy is not None else exhibition.price_max_jpy,
                 price_note=max((old.price_note, exhibition.price_note), key=lambda value: len(value or "")),
                 official_url=old.official_url or exhibition.official_url,
+                source_refs=tuple(
+                    (source, value["id"], value["url"])
+                    for source, value in sorted(refs.items())
+                ),
             ),
             venue,
         )
@@ -110,40 +129,42 @@ def build_row(exhibition: Exhibition, venue: dict[str, Any], verified_at: dateti
     period = " ～ ".join(value for value in (start, end) if value) or None
     return {
         "source_key": _event_key(exhibition, venue),
-        "name_ja": exhibition.title,
-        "name_en": None,
-        "name_zh": None,
-        "category": "exhibition",
-        "area": venue.get("area"),
-        "latitude": venue["latitude"],
-        "longitude": venue["longitude"],
-        "location_text": venue["name_ja"],
-        "address_ja": venue.get("address_ja") or venue.get("location_text"),
-        "ward_city": venue.get("ward_city"),
+        "venue_id": venue["id"],
+        "title_ja": exhibition.title,
+        "title_en": None,
         "official_url": exhibition.official_url,
-        "access_url": venue.get("access_url"),
-        "exhibitions_url": exhibition.official_url,
         "price_min_jpy": exhibition.price_min_jpy,
         "price_max_jpy": exhibition.price_max_jpy,
         "price_note": exhibition.price_note,
-        "exhibition_starts_on": start,
-        "exhibition_ends_on": end,
-        "exhibition_period_note": period,
+        "starts_on": start,
+        "ends_on": end,
+        "period_note": period,
         "description_ja": exhibition.description,
         "description_en": None,
-        "source_name": exhibition.source,
-        "source_url": exhibition.source_url,
+        "sources": exhibition.source.split("+"),
+        "source_refs": {
+            source: {"id": source_id, "url": source_url}
+            for source, source_id, source_url in (
+                exhibition.source_refs
+                or ((exhibition.source, exhibition.source_id, exhibition.source_url),)
+            )
+        },
         "verified_at": verified_at.isoformat(),
         "status": "operating",
         "updated_at": verified_at.isoformat(),
     }
 
 
-async def _read_all(client: SupabaseRestClient, *, filter_params: dict[str, str]) -> list[dict[str, Any]]:
+async def _read_all(
+    client: SupabaseRestClient,
+    *,
+    filter_params: dict[str, str],
+    table: str = "locations",
+) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     while True:
         params = {**filter_params, "select": "*", "limit": "500", "offset": str(len(rows))}
-        page = await client.request("GET", "locations", params=params, profile="travel")
+        page = await client.request("GET", table, params=params, profile="travel")
         if not page:
             return rows
         rows.extend(page)
@@ -185,7 +206,7 @@ async def sync_exhibitions(*, dry_run: bool = False) -> SyncResult:
         batch = rows[offset : offset + 100]
         await database.request(
             "POST",
-            "locations",
+            "exhibitions",
             params={"on_conflict": "source_key"},
             body=batch,
             prefer="resolution=merge-duplicates,return=minimal",
@@ -193,14 +214,16 @@ async def sync_exhibitions(*, dry_run: bool = False) -> SyncResult:
         )
         result.upserted += len(batch)
 
-    existing = await _read_all(database, filter_params={"source_key": f"like.{SYNC_PREFIX}*"})
+    existing = await _read_all(
+        database, filter_params={"source_key": f"like.{SYNC_PREFIX}*"}, table="exhibitions"
+    )
     current_keys = {row["source_key"] for row in rows}
     stale_ids = [row["id"] for row in existing if row["source_key"] not in current_keys]
     for offset in range(0, len(stale_ids), 100):
         ids = stale_ids[offset : offset + 100]
         await database.request(
             "DELETE",
-            "locations",
+            "exhibitions",
             params={"id": f"in.({','.join(ids)})"},
             prefer="return=minimal",
             profile="travel",

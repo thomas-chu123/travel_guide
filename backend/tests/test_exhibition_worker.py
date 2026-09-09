@@ -6,7 +6,7 @@ from worker.main import next_run
 from worker.sources.common import Exhibition, parse_jpy
 from worker.sources.go_tokyo import parse as parse_go_tokyo
 from worker.sources.tokyo_art_beat import parse as parse_tokyo_art_beat
-from worker.sync_exhibitions import build_row, match_venue, merge_exhibitions
+from worker.sync_exhibitions import _event_key, build_row, match_venue, merge_exhibitions
 
 
 def test_go_tokyo_parser_extracts_period_description_and_price():
@@ -81,12 +81,25 @@ def test_match_merge_and_database_row_use_curated_venue_coordinates():
     merged = merge_exhibitions([(base, venue), (richer, venue)])
     assert len(merged) == 1
     row = build_row(*merged[0], datetime(2026, 9, 8, tzinfo=ZoneInfo("Asia/Tokyo")))
-    assert row["location_text"] == "東京都美術館"
-    assert row["latitude"] == 35.7
+    assert row["venue_id"] == "venue-id"
+    assert row["title_ja"] == "企画展"
     assert row["description_ja"] == "より長い説明"
+    assert set(row["source_refs"]) == {"go-tokyo", "tokyo-art-beat"}
 
 
 def test_free_price_and_next_daily_run():
     assert parse_jpy("入場無料") == (0, 0)
     now = datetime(2026, 9, 8, 2, 1, tzinfo=ZoneInfo("Asia/Tokyo"))
     assert next_run(now) == datetime(2026, 9, 9, 2, 0, tzinfo=ZoneInfo("Asia/Tokyo"))
+
+
+def test_event_identity_survives_corrected_end_date():
+    venue = {"id": "venue-id"}
+    item = Exhibition(
+        source="source", source_id="1", source_url="https://example.jp/1",
+        title="企画展", venue_name="美術館", starts_on=date(2026, 9, 1),
+        ends_on=date(2026, 10, 1),
+    )
+    assert _event_key(item, venue) == _event_key(
+        replace(item, ends_on=date(2026, 10, 15)), venue
+    )

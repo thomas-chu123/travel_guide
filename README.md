@@ -88,7 +88,12 @@ PYTHONPATH=backend backend/.venv/bin/python backend/scripts/enrich_locations.py 
 
 `worker` 每天以東京時間 02:00 讀取 Tokyo Art Beat 與 GO TOKYO，僅保留能比對到
 `tokyo-art-top50:*` 場館的展覽。資料會依場館、標題與展期去重後寫入
-`travel.locations`；過期或來源已移除的 `exhibition-sync:*` 資料會在兩個來源都成功讀取後清除。
+`travel.exhibitions`，並以 `venue_id` 關聯 `travel.locations`；過期或來源已移除的
+`exhibition-sync:*` 資料會在兩個來源都成功讀取後清除。API 仍會將展覽與場館座標組成
+相容的 GeoJSON，因此前端不需要把展覽複製回場館資料。
+
+展覽唯一鍵由場館 ID、正規化標題及開始日期產生，不包含結束日期，避免來源修正展期時
+產生重複紀錄。每個來源的穩定 ID 與 URL 另存於 `source_refs` JSONB，方便追蹤及後續比對。
 解析器不下載或儲存圖片。
 
 可先執行唯讀預覽，再立即同步：
