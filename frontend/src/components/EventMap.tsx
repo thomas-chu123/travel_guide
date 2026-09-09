@@ -6,6 +6,9 @@ import maplibreWorkerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&ur
 import { Protocol } from "pmtiles";
 import "maplibre-gl/dist/maplibre-gl.css";
 import museumIconUrl from "../assets/museum-icon.png";
+import parkIconUrl from "../assets/park-icon.png";
+import templeShrineIconUrl from "../assets/temple-shrine-icon.png";
+import type { PlaceCategory } from "../App";
 
 type Props = { id: string; name_ja: string; name_en: string | null; category: string; area: string | null; location_text: string | null; official_url: string | null; price_min_jpy: number | null; price_max_jpy: number | null; price_note: string | null; exhibition_starts_on: string | null; exhibition_ends_on: string | null; exhibition_period_note: string | null; opening_hours?: string | null; description_ja: string | null; description_en: string | null };
 export type LocationFeature = Feature<Point, Props>;
@@ -22,8 +25,9 @@ function popup(p: Props) { const root = document.createElement("article"); root.
 function coordinateKey(coordinates: number[]) { return coordinates.map((value) => value.toFixed(6)).join(","); }
 function venuePopup(items: LocationFeature[]) { const venue = items.find((item) => item.properties.category !== "exhibition"); const exhibitions = items.filter((item) => item.properties.category === "exhibition").sort((a, b) => (a.properties.exhibition_starts_on ?? "").localeCompare(b.properties.exhibition_starts_on ?? "")); const root = document.createElement("article"); root.className = "location-popup venue-popup"; if (venue) root.append(popup(venue.properties)); else if (exhibitions[0]) { const h = document.createElement("h2"); h.textContent = exhibitions[0].properties.location_text || "展覽場館"; root.append(h); } if (exhibitions.length) { const title = document.createElement("h3"); title.textContent = `展覽資訊（${exhibitions.length}）`; root.append(title); const list = document.createElement("div"); list.className = "exhibition-list"; for (const exhibition of exhibitions) list.append(popup(exhibition.properties)); root.append(list); } return root; }
 
-export function EventMap({ onLocationsChange }: { onLocationsChange: (items: LocationFeature[]) => void }) {
+export function EventMap({ category, onLocationsChange }: { category: PlaceCategory; onLocationsChange: (items: LocationFeature[]) => void }) {
   const element = useRef<HTMLDivElement>(null), mapRef = useRef<MapLibreMap | null>(null);
+  const featuresRef = useRef<LocationFeature[]>([]);
   const [status, setStatus] = useState("載入東京景點中…"), [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -92,7 +96,7 @@ export function EventMap({ onLocationsChange }: { onLocationsChange: (items: Loc
     const handledClicks = new WeakSet<Event>();
     const updateVisibleExhibitions = () => {
       const bounds = map.getBounds();
-      const visible = allFeatures.filter((feature) => feature.properties.category === "exhibition" && bounds.contains(feature.geometry.coordinates as [number, number]));
+      const visible = allFeatures.filter((feature) => bounds.contains(feature.geometry.coordinates as [number, number]));
       console.debug(`${logPrefix} visible exhibitions updated`, { elapsed: elapsed(), visible: visible.length, total: allFeatures.length });
       onLocationsChange(visible);
     };
@@ -115,7 +119,7 @@ export function EventMap({ onLocationsChange }: { onLocationsChange: (items: Loc
       console.info(`${logPrefix} configuring location layers`, { elapsed: elapsed() });
       try {
         map.addSource("locations", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
-        map.addLayer({ id: "location-points", type: "circle", source: "locations", filter: ["all", ["!=", "category", "museum"], ["!=", "category", "art_museum"]], paint: { "circle-color": ["match", ["get", "category"], "park", "#159e84", "temple_shrine", "#8b5aa3", "exhibition", "#2563eb", "food_shopping", "#e95d75", "#2563eb"], "circle-radius": 6, "circle-stroke-color": "#fff", "circle-stroke-width": 1.5 } });
+        map.addLayer({ id: "location-points", type: "circle", source: "locations", filter: ["!", ["in", ["get", "category"], ["literal", ["museum", "art_museum", "park", "temple_shrine"]]]], paint: { "circle-color": ["match", ["get", "category"], "exhibition", "#2563eb", "food_shopping", "#e95d75", "#2563eb"], "circle-radius": 6, "circle-stroke-color": "#fff", "circle-stroke-width": 1.5 } });
         const museumFilter: maplibregl.FilterSpecification = ["any", ["==", "category", "museum"], ["==", "category", "art_museum"]];
         map.addLayer({ id: "museum-hit-areas", type: "circle", source: "locations", filter: museumFilter, paint: { "circle-radius": 28, "circle-color": "rgba(0,0,0,0.01)", "circle-stroke-width": 0 } });
 
@@ -125,7 +129,13 @@ export function EventMap({ onLocationsChange }: { onLocationsChange: (items: Loc
         map.addImage("museum-icon", museumImage.data);
         map.addLayer({ id: "museum-points", type: "symbol", source: "locations", filter: museumFilter, layout: { "icon-image": "museum-icon", "icon-size": 0.15, "icon-allow-overlap": true, "icon-ignore-placement": true } });
 
-        const interactiveLayers = ["location-points", "museum-hit-areas", "museum-points"];
+        for (const [name, url, itemCategory] of [["park", parkIconUrl, "park"], ["temple-shrine", templeShrineIconUrl, "temple_shrine"]] as const) {
+          const image = await map.loadImage(url);
+          map.addImage(`${name}-icon`, image.data);
+          map.addLayer({ id: `${name}-points`, type: "symbol", source: "locations", filter: ["==", "category", itemCategory], layout: { "icon-image": `${name}-icon`, "icon-size": 0.15, "icon-allow-overlap": true, "icon-ignore-placement": true } });
+        }
+
+        const interactiveLayers = ["location-points", "museum-hit-areas", "museum-points", "park-points", "temple-shrine-points"];
         const openPopup = (event: maplibregl.MapLayerMouseEvent) => {
           if (handledClicks.has(event.originalEvent)) return;
           handledClicks.add(event.originalEvent);
@@ -164,6 +174,7 @@ export function EventMap({ onLocationsChange }: { onLocationsChange: (items: Loc
         const data = await response.json() as Collection;
         if (!Array.isArray(data.features)) throw new Error("API response does not contain a features array");
         allFeatures = data.features;
+        featuresRef.current = data.features;
         console.info(`${logPrefix} locations decoded`, { elapsed: elapsed(), returned: data.returned, features: data.features.length });
         for (const feature of data.features) {
           const key = coordinateKey(feature.geometry.coordinates);
@@ -187,5 +198,26 @@ export function EventMap({ onLocationsChange }: { onLocationsChange: (items: Loc
       mapRef.current = null;
     };
   }, [onLocationsChange]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map?.getLayer("location-points")) return;
+    const art = ["museum", "art_museum", "gallery", "exhibition_space", "convention_center", "exhibition"];
+    const selected = category === "art" ? art : category === "all" ? null : [category];
+    const selectedFilter: maplibregl.FilterSpecification | null = selected ? ["in", ["get", "category"], ["literal", selected]] : null;
+    const baseFilters: Record<string, maplibregl.FilterSpecification> = {
+      "location-points": ["!", ["in", ["get", "category"], ["literal", ["museum", "art_museum", "park", "temple_shrine"]]]],
+      "museum-hit-areas": ["in", ["get", "category"], ["literal", ["museum", "art_museum"]]],
+      "museum-points": ["in", ["get", "category"], ["literal", ["museum", "art_museum"]]],
+      "park-points": ["==", "category", "park"],
+      "temple-shrine-points": ["==", "category", "temple_shrine"],
+    };
+    for (const [layer, base] of Object.entries(baseFilters)) {
+      const filter = (selectedFilter ? ["all", base, selectedFilter] : base) as maplibregl.FilterSpecification;
+      map.setFilter(layer, filter);
+    }
+    const bounds = map.getBounds();
+    onLocationsChange(featuresRef.current.filter((feature) => bounds.contains(feature.geometry.coordinates as [number, number])));
+  }, [category, onLocationsChange]);
   return <div className="map-panel"><div ref={element} className="map-canvas" /><p className="map-status">{status}</p>{error && <p className="map-hint">{error}</p>}</div>;
 }

@@ -2,7 +2,10 @@ import { useMemo, useState } from "react";
 import { EventMap, type LocationFeature } from "./components/EventMap";
 
 type ExhibitionFilter = "current" | "future" | "all";
+export type PlaceCategory = "art" | "park" | "temple_shrine" | "all";
 const filterLabels: Record<ExhibitionFilter, string> = { current: "現有展覽", future: "未來展覽", all: "所有展覽" };
+const categoryLabels: Record<PlaceCategory, string> = { art: "美術館/展覽館", park: "公園", temple_shrine: "寺廟/神社", all: "全部景點" };
+const artCategories = new Set(["museum", "art_museum", "gallery", "exhibition_space", "convention_center", "exhibition"]);
 const venueCollator = new Intl.Collator("ja", { sensitivity: "base", numeric: true });
 
 function tokyoToday() {
@@ -11,6 +14,7 @@ function tokyoToday() {
   return `${value.year}-${value.month}-${value.day}`;
 }
 function matchesFilter(item: LocationFeature, filter: ExhibitionFilter, today: string) {
+  if (item.properties.category !== "exhibition") return true;
   const { exhibition_starts_on: starts, exhibition_ends_on: ends } = item.properties;
   if (filter === "all") return true;
   if (filter === "future") return Boolean(starts && starts > today);
@@ -20,15 +24,16 @@ function price(item: LocationFeature) { const p = item.properties; return p.pric
 function period(item: LocationFeature) { const p = item.properties; return p.exhibition_period_note || (p.exhibition_starts_on ? `${p.exhibition_starts_on}${p.exhibition_ends_on ? ` ～ ${p.exhibition_ends_on}` : ""}` : "展期未提供"); }
 
 export function App() {
-  const [items, setItems] = useState<LocationFeature[]>([]), [open, setOpen] = useState(false), [filter, setFilter] = useState<ExhibitionFilter>("current");
+  const [items, setItems] = useState<LocationFeature[]>([]), [open, setOpen] = useState(false), [filter, setFilter] = useState<ExhibitionFilter>("current"), [category, setCategory] = useState<PlaceCategory>("all");
   const today = tokyoToday();
   const visibleItems = useMemo(() => items
+    .filter((item) => category === "all" || (category === "art" ? artCategories.has(item.properties.category) : item.properties.category === category))
     .filter((item) => matchesFilter(item, filter, today))
     .sort((a, b) => {
       const venueOrder = venueCollator.compare(a.properties.location_text ?? "", b.properties.location_text ?? "");
       if (venueOrder !== 0) return venueOrder;
       const dateOrder = (a.properties.exhibition_starts_on ?? "").localeCompare(b.properties.exhibition_starts_on ?? "");
       return dateOrder || venueCollator.compare(a.properties.name_ja, b.properties.name_ja);
-    }), [filter, items, today]);
-  return <main className="map-shell"><section className="map-area"><EventMap onLocationsChange={setItems} /></section><header className="map-header"><button className="menu-button" aria-label="開啟展覽選單" aria-expanded={open} onClick={() => setOpen(!open)}>☰</button><div><p>TOKYO WALKING MAP</p><strong>東京展覽地圖</strong></div></header><aside className={open ? "drawer open" : "drawer"} aria-hidden={!open}><div className="drawer-title"><div><p>探索東京</p><h1>目前地圖中的展覽</h1></div><button className="close-button" onClick={() => setOpen(false)} aria-label="關閉選單">×</button></div><section className="event-list"><div className="exhibition-filters" role="group" aria-label="展覽日期篩選">{(Object.keys(filterLabels) as ExhibitionFilter[]).map((value) => <button key={value} className={filter === value ? "selected" : ""} aria-pressed={filter === value} onClick={() => setFilter(value)}>{filterLabels[value]}</button>)}</div><div className="list-title"><h2>{filterLabels[filter]}</h2><span>{visibleItems.length.toLocaleString("ja-JP")} 筆</span></div>{visibleItems.length ? visibleItems.map((item) => <article className="exhibition-card" key={item.properties.id}><h3>{item.properties.name_ja}</h3><p className="exhibition-card-venue">{item.properties.location_text || "場館未提供"}</p><dl>{item.properties.official_url && <div><dt>URL</dt><dd><a href={item.properties.official_url} target="_blank" rel="noreferrer">{item.properties.official_url}</a></dd></div>}<div><dt>金額</dt><dd>{price(item)}</dd></div><div><dt>展期</dt><dd>{period(item)}</dd></div><div><dt>營業時間</dt><dd>{item.properties.opening_hours || "營業時間未提供"}</dd></div></dl><p className="exhibition-card-description">{item.properties.description_ja || item.properties.description_en || "暫無展覽說明。"}</p></article>) : <p className="empty">目前地圖範圍內沒有{filterLabels[filter]}，請移動地圖或切換篩選條件。</p>}</section></aside>{open && <button className="drawer-backdrop" aria-label="關閉選單" onClick={() => setOpen(false)} />}</main>;
+    }), [category, filter, items, today]);
+  return <main className="map-shell"><section className="map-area"><EventMap category={category} onLocationsChange={setItems} /></section><header className="map-header"><button className="menu-button" aria-label="開啟景點選單" aria-expanded={open} onClick={() => setOpen(!open)}>☰</button><div><p>TOKYO WALKING MAP</p><strong>東京景點地圖</strong></div></header><aside className={open ? "drawer open" : "drawer"} aria-hidden={!open}><div className="drawer-title"><div><p>探索東京</p><h1>目前地圖中的景點</h1></div><button className="close-button" onClick={() => setOpen(false)} aria-label="關閉選單">×</button></div><section className="event-list"><div className="category-filters" role="group" aria-label="景點類別篩選">{(Object.keys(categoryLabels) as PlaceCategory[]).map((value) => <button key={value} className={category === value ? "selected" : ""} aria-pressed={category === value} onClick={() => setCategory(value)}>{categoryLabels[value]}</button>)}</div>{(category === "all" || category === "art") && <div className="exhibition-filters" role="group" aria-label="展覽日期篩選">{(Object.keys(filterLabels) as ExhibitionFilter[]).map((value) => <button key={value} className={filter === value ? "selected" : ""} aria-pressed={filter === value} onClick={() => setFilter(value)}>{filterLabels[value]}</button>)}</div>}<div className="list-title"><h2>{categoryLabels[category]}</h2><span>{visibleItems.length.toLocaleString("ja-JP")} 筆</span></div>{visibleItems.length ? visibleItems.map((item) => <article className="exhibition-card" key={item.properties.id}><h3>{item.properties.name_ja}</h3><p className="exhibition-card-venue">{item.properties.location_text || item.properties.area || categoryLabels[category]}</p><dl>{item.properties.official_url && <div><dt>URL</dt><dd><a href={item.properties.official_url} target="_blank" rel="noreferrer">{item.properties.official_url}</a></dd></div>}{item.properties.category === "exhibition" && <><div><dt>金額</dt><dd>{price(item)}</dd></div><div><dt>展期</dt><dd>{period(item)}</dd></div></>}<div><dt>營業時間</dt><dd>{item.properties.opening_hours || "營業時間未提供"}</dd></div></dl><p className="exhibition-card-description">{item.properties.description_ja || item.properties.description_en || "暫無景點說明。"}</p></article>) : <p className="empty">目前地圖範圍內沒有{categoryLabels[category]}，請移動地圖或切換篩選條件。</p>}</section></aside>{open && <button className="drawer-backdrop" aria-label="關閉選單" onClick={() => setOpen(false)} />}</main>;
 }
