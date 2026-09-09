@@ -8,7 +8,7 @@ const artCategories = new Set(["museum", "art_museum", "gallery", "exhibition_sp
 
 function initialLocale(): Locale {
   const saved = localStorage.getItem("tokyo-map-locale");
-  return saved === "ja" || saved === "en" || saved === "zh-TW" ? saved : "zh-TW";
+  return saved === "ja" || saved === "en" || saved === "zh-TW" ? saved : "ja";
 }
 function tokyoToday() {
   const parts = new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Tokyo", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date());
