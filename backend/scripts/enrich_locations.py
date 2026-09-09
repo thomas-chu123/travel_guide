@@ -24,6 +24,7 @@ FIELDS = (
     "official_url",
     "access_url",
     "exhibitions_url",
+    "opening_hours",
     "source_url",
     "verified_at",
     "status",
@@ -44,6 +45,7 @@ class VenuePatch(BaseModel):
     official_url: HttpUrl | None = None
     access_url: HttpUrl | None = None
     exhibitions_url: HttpUrl | None = None
+    opening_hours: str | None = Field(default=None, min_length=1)
     source_url: HttpUrl
     verified_at: datetime | None = None
     status: str | None = None

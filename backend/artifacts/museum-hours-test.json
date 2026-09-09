@@ -1,0 +1,358 @@
+{
+  "generated_at": "2026-09-09T09:15:50.556515+00:00",
+  "apply": true,
+  "candidates": 50,
+  "found": 38,
+  "results": [
+    {
+      "id": "0118055a-bb36-5697-bbaa-2f333e33ab17",
+      "name_ja": "永青文庫",
+      "before": null,
+      "opening_hours": "開館時間 10：00～16：30 (入館は16：00まで) 休館日",
+      "source_url": "https://www.eiseibunko.com/"
+    },
+    {
+      "id": "04d9f75f-3f41-56d4-bedc-6849a330da3d",
+      "name_ja": "戸栗美術館",
+      "before": null,
+      "opening_hours": "■開館時間 10：00～17：00 毎週金曜日・土曜日 夜間開館",
+      "source_url": "https://www.toguri-museum.or.jp/riyou/"
+    },
+    {
+      "id": "0fa7f27b-374b-52b4-9cd9-9d8cfdcf1caa",
+      "name_ja": "台東区立書道博物館",
+      "before": null,
+      "opening_hours": "開館時間 午前9時30分～午後4時30分(入館は午後4時まで) 休館日",
+      "source_url": "https://www.taitogeibun.net/shodou/riyou/"
+    },
+    {
+      "id": "12381a93-1732-593f-81a0-e77eda2df35a",
+      "name_ja": "東京オペラシティ アートギャラリー",
+      "before": null,
+      "opening_hours": "050-5541-8600（ハローダイヤル） 開館時間： 11:00 ─ 19:00（入場は18:30まで）",
+      "source_url": "https://www.operacity.jp/ag/"
+    },
+    {
+      "id": "28700686-2f4a-5582-b418-e0be56e1c99d",
+      "name_ja": "国立西洋美術館",
+      "before": null,
+      "opening_hours": "金曜・土曜日 9：30～20：00 ※「カフェすいれん」以外のミュージアムショップ等の館内施設の営業は開館時間と同じ 休館日",
+      "source_url": "https://www.nmwa.go.jp/jp/visit/"
+    },
+    {
+      "id": "2b300c3a-df51-51d8-be75-f06629e564a1",
+      "name_ja": "東京都美術館",
+      "before": null,
+      "opening_hours": "進む 本日は全館休館日です 本日の開館時間 9:30～17:30",
+      "source_url": "https://www.tobikan.jp/"
+    },
+    {
+      "id": "2e32fe0a-09be-5427-b049-4049bbcfab75",
+      "name_ja": "八王子市夢美術館",
+      "before": null,
+      "opening_hours": "開館時間 10:00〜19:00（入館は18:30まで） ※開館時間は変更になることがあります。 休館日 月曜日（ただし祝休日の場合は開館し、翌火曜日が休館）",
+      "source_url": "https://www.yumebi.com/"
+    },
+    {
+      "id": "33a079e2-63e6-5c68-90f5-194ee2cf7682",
+      "name_ja": "大倉集古館",
+      "before": null,
+      "opening_hours": "開館時間 10：00～17：00（入館は16：30まで） 休館日",
+      "source_url": "https://www.shukokan.org/basicinfo/"
+    },
+    {
+      "id": "342b91b9-9f81-55d7-8e1e-1d0a048211a2",
+      "name_ja": "渋谷区立松濤美術館",
+      "before": null,
+      "opening_hours": "・開館時間 午前9:00～午後5:00(入館は午後４:30まで、 公募展のみ最終日の3月22日（日）は午後４:00閉場) ・公募展、サロン展ともに入館は無料です。 地下1階展示室では公募展を開催。77点の作品が並びます。多様な表現からは、渋谷という地域に関わる人々の現在の創作を一望することができます。",
+      "source_url": "https://shoto-museum.jp/"
+    },
+    {
+      "id": "3d48af70-d7b0-5b75-ad1e-5adcb5f9b396",
+      "name_ja": "根津美術館",
+      "before": null,
+      "opening_hours": "ご注意 開館時間 午前10時～午後5時（入館は4時30分まで）",
+      "source_url": "https://www.nezu-muse.or.jp/jp/visit/"
+    },
+    {
+      "id": "4689f1ed-9d1f-57db-84ea-c90e28206f21",
+      "name_ja": "松岡美術館",
+      "before": null,
+      "opening_hours": null,
+      "source_url": null
+    },
+    {
+      "id": "4c5e50f4-cda5-5a79-b98d-ea7856df258b",
+      "name_ja": "武蔵野市立吉祥寺美術館",
+      "before": null,
+      "opening_hours": "開館時間 午前10時～午後7時30分 音楽室は午前9時～午後9時 休館日",
+      "source_url": "https://www.musashino.or.jp/museum/"
+    },
+    {
+      "id": "55ffc7ef-ef51-5403-bea7-2c16ca58b1e4",
+      "name_ja": "上野の森美術館",
+      "before": null,
+      "opening_hours": "企画展 ボールはともだち。キャプテン翼展 最後の週末☆開館時間のおしらせ 好評につき開館時間延長が決定！ 【開館時間変更のおしらせ！】 最終週の、7月3(木）、4(金）、5（土）も20:00まで開館します。（入館は閉館の30分前まで） 企画展 ボールはともだち。キャプテン翼展 2014年6月14日（土）〜7月6日（日）開催",
+      "source_url": "https://www.ueno-mori.org/informations/"
+    },
+    {
+      "id": "6531847a-bd54-53a1-a301-f4595c9647db",
+      "name_ja": "山種美術館",
+      "before": null,
+      "opening_hours": null,
+      "source_url": null
+    },
+    {
+      "id": "67f02fbc-0b30-5377-9b35-31bc09be9aef",
+      "name_ja": "文化学園服飾博物館",
+      "before": null,
+      "opening_hours": "基本情報 開館時間 月～金 10:00～16:30",
+      "source_url": "https://museum.bunka.ac.jp/guide/"
+    },
+    {
+      "id": "685dcadd-5502-521f-801e-1fad409d9874",
+      "name_ja": "すみだ北斎美術館",
+      "before": null,
+      "opening_hours": "関連リンク 本日は開館日です。 営業時間 9:30 〜 17:30",
+      "source_url": "https://hokusai-museum.jp/"
+    },
+    {
+      "id": "69256968-989d-5186-862b-0b79335af8a1",
+      "name_ja": "森美術館",
+      "before": null,
+      "opening_hours": "※会期中の火曜日は17:00まで ※ただし、5月5日（火・祝）、8月11日（火・祝）、9月22日（火・祝）は22:00まで ※最終入館は閉館時間の30分前まで ※開館時間延長：6月～9月の土・日・祝休日［7月18日（土）は除外］、8月8日（土）～16日（日）は9:00～22:00 来館のご案内 チケット・料金",
+      "source_url": "https://www.mori.art.museum/jp/"
+    },
+    {
+      "id": "6b2fd535-d491-55d7-b27e-79513ae4532f",
+      "name_ja": "三鷹市美術ギャラリー",
+      "before": null,
+      "opening_hours": null,
+      "source_url": null
+    },
+    {
+      "id": "6be96452-932e-59d6-bd82-fd667917fa4b",
+      "name_ja": "郷さくら美術館",
+      "before": null,
+      "opening_hours": "開館時間 開館時間 : 10:00 ～ 17:00（最終入館16:30） 休館日 : 月曜日（祝日/振替休日の場合は翌日・又は直後の平日）",
+      "source_url": "https://www.satosakura.jp/?page_id=22"
+    },
+    {
+      "id": "6e0d99a8-f223-5b29-9160-5516e769bf26",
+      "name_ja": "五島美術館",
+      "before": null,
+      "opening_hours": "開館時間・入館料 開館時間午前10時―午後5時（入館受付は午後4時30分まで） 休館日毎月曜日（祝日の場合は翌平日）、展示替期間、夏期整備期間、年末年始など",
+      "source_url": "https://www.gotoh-museum.or.jp/"
+    },
+    {
+      "id": "72b8140b-4238-535f-8f6d-e982ad5a00af",
+      "name_ja": "東京都写真美術館",
+      "before": null,
+      "opening_hours": "ご利用案内 開館時間 10:00～18:00（木・金曜日は20:00まで）",
+      "source_url": "https://topmuseum.jp/guide/"
+    },
+    {
+      "id": "73040663-0295-5c78-bf2d-2c0f3621a95e",
+      "name_ja": "たましん美術館",
+      "before": null,
+      "opening_hours": null,
+      "source_url": null
+    },
+    {
+      "id": "76bce679-e6b7-52c5-9e2f-e53ce421ddfd",
+      "name_ja": "静嘉堂文庫美術館",
+      "before": null,
+      "opening_hours": "開館時間 10:00～17:00 ※夜間開館あり。展覧会ページをご確認ください （入館は閉館の30分前まで） 休館日 毎週月曜日（祝日の場合は開館し翌火曜日休館）",
+      "source_url": "https://www.seikado.or.jp/"
+    },
+    {
+      "id": "8220ef84-8266-58c5-81d4-cd00282c6591",
+      "name_ja": "アーティゾン美術館",
+      "before": null,
+      "opening_hours": "ショップ 開館時間 10:00 〜 18:00",
+      "source_url": "https://www.artizon.museum/user-guide/"
+    },
+    {
+      "id": "89cc7f59-7518-5978-8490-8ef971ee16c7",
+      "name_ja": "NTTインターコミュニケーション・センター [ICC]",
+      "before": null,
+      "opening_hours": null,
+      "source_url": null
+    },
+    {
+      "id": "8f87bf8d-d687-5b04-931f-fd7a8ec27c92",
+      "name_ja": "世田谷美術館",
+      "before": null,
+      "opening_hours": "開館時間 10時〜18時（展覧会入場は17:30まで） 利用案内",
+      "source_url": "https://www.setagayaartmuseum.or.jp/"
+    },
+    {
+      "id": "976d1d08-48a6-59e4-a3a9-a329a8c8faaf",
+      "name_ja": "ミュゼ浜口陽三・ヤマサコレクション",
+      "before": null,
+      "opening_hours": null,
+      "source_url": null
+    },
+    {
+      "id": "97b1cd9f-8d03-5206-8862-990031e33aff",
+      "name_ja": "町田市立国際版画美術館",
+      "before": null,
+      "opening_hours": "開館時間・休館日 平日 午前10時～午後5時（入場は4時30分まで）",
+      "source_url": "https://hanga-museum.jp/guide"
+    },
+    {
+      "id": "97fd9a1c-bef6-564b-aa08-adc1b7431777",
+      "name_ja": "泉屋博古館東京",
+      "before": null,
+      "opening_hours": "開館時間 11:00 〜 18:00（最終入館 17:30）金曜日は19:00まで開館しています 休館日",
+      "source_url": "https://sen-oku.or.jp/tokyo/facility_t/"
+    },
+    {
+      "id": "98176977-f73c-56cf-9ba8-7f14e7a63e83",
+      "name_ja": "台東区立朝倉彫塑館",
+      "before": null,
+      "opening_hours": "開館時間 午前9時30分～午後4時30分 (入館は午後4時まで) 休館日",
+      "source_url": "https://www.taitogeibun.net/asakura/guidance/nyukanryo/"
+    },
+    {
+      "id": "98e800f7-dfee-5a11-91a3-4a3bb3fe3768",
+      "name_ja": "東京国立近代美術館",
+      "before": null,
+      "opening_hours": null,
+      "source_url": null
+    },
+    {
+      "id": "9c140d36-c735-555d-b9cb-b55eb3b34382",
+      "name_ja": "石洞美術館",
+      "before": null,
+      "opening_hours": "2月14日(土) 臨時休館 開館時間 午前10:00-午後5:00",
+      "source_url": "https://sekido-museum.jp/"
+    },
+    {
+      "id": "9c23a4ec-6f54-501b-b5e6-77b50a7f27ad",
+      "name_ja": "小平市平櫛田中彫刻美術館",
+      "before": null,
+      "opening_hours": null,
+      "source_url": null
+    },
+    {
+      "id": "a424f771-1d80-549f-9a6e-b9aff8fc7ed0",
+      "name_ja": "東京都現代美術館",
+      "before": null,
+      "opening_hours": "開館時間 10:00-18:0010時〜18時 アクセス 蔵書検索",
+      "source_url": "https://www.mot-art-museum.jp/"
+    },
+    {
+      "id": "a543c475-5b73-5f06-b9f0-5a400796ce9b",
+      "name_ja": "草間彌生美術館",
+      "before": null,
+      "opening_hours": null,
+      "source_url": null
+    },
+    {
+      "id": "ad82a538-c2ff-54fd-9b50-d1227ec7c2ac",
+      "name_ja": "東京富士美術館",
+      "before": null,
+      "opening_hours": "休館日：毎週月曜日（祝日、振替休日の場合は開館。翌火曜日 は振替休館）、年末・年始、展示替期間 開館時間：10:00～17:00（16:30受付終了）",
+      "source_url": "https://www.fujibi.or.jp/"
+    },
+    {
+      "id": "b7ec254f-e5f2-57f2-ba75-690d04804575",
+      "name_ja": "三菱一号館美術館",
+      "before": null,
+      "opening_hours": "FAQ・お問い合わせ 開館時間 10:00～18:00",
+      "source_url": "https://mimt.jp/guide/"
+    },
+    {
+      "id": "bb8ea09a-b582-5aad-861c-e12ae6bdbc8e",
+      "name_ja": "府中市美術館",
+      "before": null,
+      "opening_hours": "開館時間 午前10時から午後5時 （展示室への最終入場は午後4時30分まで）",
+      "source_url": "https://www.city.fuchu.tokyo.jp/art/goriyou/riyo.html"
+    },
+    {
+      "id": "bf713fe0-fcef-570f-8d80-51432e8d5785",
+      "name_ja": "長谷川町子美術館",
+      "before": null,
+      "opening_hours": "開館時間 10時〜17時30分（受付締切16時30分） 休館日",
+      "source_url": "https://www.hasegawamachiko.jp/"
+    },
+    {
+      "id": "c4dd073d-9e30-55d8-b925-a1d135d81231",
+      "name_ja": "東京国立博物館",
+      "before": null,
+      "opening_hours": "自転車・自動二輪車の駐輪場はありません。 開館時間 9時30分～17時00分",
+      "source_url": "https://www.tnm.jp/modules/r_free_page/index.php?id=113"
+    },
+    {
+      "id": "cccb9d93-ade7-5049-90b9-5dbb1bf4c0dc",
+      "name_ja": "東京都庭園美術館",
+      "before": null,
+      "opening_hours": "開館時間 10:00 から",
+      "source_url": "https://www.teien-art-museum.ne.jp/"
+    },
+    {
+      "id": "d161087d-f464-544e-aeae-a6234bb30c81",
+      "name_ja": "国立新美術館",
+      "before": null,
+      "opening_hours": "10:00-18:00（入場は閉館の30分前まで） 夜間開館など開館時間の詳細はこちら 休館日",
+      "source_url": "https://www.nact.jp/"
+    },
+    {
+      "id": "da89d4d5-b884-516d-a224-4afd82b751c7",
+      "name_ja": "日本カメラ博物館",
+      "before": null,
+      "opening_hours": null,
+      "source_url": null
+    },
+    {
+      "id": "e5fa5a2e-4cda-5952-8bcb-f636bca6546b",
+      "name_ja": "国立映画アーカイブ",
+      "before": null,
+      "opening_hours": null,
+      "source_url": null
+    },
+    {
+      "id": "ebcea51f-0bb5-50f4-af8e-880a2125cf11",
+      "name_ja": "パナソニック汐留美術館",
+      "before": null,
+      "opening_hours": "障がい者手帳をご提示の方および付添者1名まで無料 開館時間 午前10時～午後6時（入館は午後5時30分まで）",
+      "source_url": "https://panasonic.co.jp/ew/museum/"
+    },
+    {
+      "id": "ef80a835-64c6-55fa-ab4c-a4ac57bd4744",
+      "name_ja": "WHAT MUSEUM",
+      "before": null,
+      "opening_hours": "開館時間 11:00～18:00（最終入館17:00） 月曜休館（祝日の場合、翌火曜休館）",
+      "source_url": "https://what.warehouseofart.org/"
+    },
+    {
+      "id": "f01607ac-10e8-54de-8508-061ad4b1b757",
+      "name_ja": "三井記念美術館",
+      "before": null,
+      "opening_hours": "※入館は16:30まで ※その他、開館時間を延長する場合がありますので、「展覧会情報」のご利用案内をご確認ください。 ■休館日 月曜日",
+      "source_url": "https://www.mitsui-museum.jp/"
+    },
+    {
+      "id": "f028fd76-35d1-502d-b684-98770a3bc1ac",
+      "name_ja": "ちひろ美術館・東京",
+      "before": null,
+      "opening_hours": "開館時間： 10:00 - 17:00",
+      "source_url": "https://chihiro.jp/tokyo/"
+    },
+    {
+      "id": "f307ece1-1cbb-5ad9-a565-d84ec1ab458c",
+      "name_ja": "目黒区美術館",
+      "before": null,
+      "opening_hours": "開館時間・観覧料 開館時間・休館日・観覧料 開館時間10時00分～18時00分（入館は17時30分まで）",
+      "source_url": "https://mmat.jp/information/index.html"
+    },
+    {
+      "id": "fe2277a3-5789-5797-98f4-7e3a007d50fa",
+      "name_ja": "東京藝術大学大学美術館",
+      "before": null,
+      "opening_hours": null,
+      "source_url": null
+    }
+  ]
+}
