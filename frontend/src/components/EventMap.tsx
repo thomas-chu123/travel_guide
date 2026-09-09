@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Feature, FeatureCollection, Point } from "geojson";
 import * as maplibregl from "maplibre-gl";
 import type { GeoJSONSource, Map as MapLibreMap, StyleSpecification } from "maplibre-gl";
+import maplibreWorkerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import { Protocol } from "pmtiles";
 import "maplibre-gl/dist/maplibre-gl.css";
 import museumIconUrl from "../assets/museum-icon.png";
@@ -65,6 +66,9 @@ export function EventMap({ onLocationsChange }: { onLocationsChange: (items: Loc
     } else {
       console.info(`${logPrefix} PMTiles protocol was already registered`, { elapsed: elapsed() });
     }
+
+    maplibregl.setWorkerUrl(maplibreWorkerUrl);
+    console.info(`${logPrefix} MapLibre worker configured`, { elapsed: elapsed(), maplibreWorkerUrl });
 
     console.info(`${logPrefix} creating MapLibre map`, { elapsed: elapsed() });
     const map = new maplibregl.Map({
