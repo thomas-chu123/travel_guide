@@ -21,6 +21,14 @@ let registered = false;
 const categoryLabel: Record<string, string> = { park: "公園", temple_shrine: "寺社", museum: "美術館・博物館", art_museum: "美術館", gallery: "畫廊", exhibition_space: "展覽空間", exhibition: "展覽", convention_center: "會展中心", zoo_aquarium: "動物園・水族館", food_shopping: "餐飲・購物", point_of_interest: "景點" };
 const genericPointFilter: maplibregl.FilterSpecification = ["!", ["in", ["get", "category"], ["literal", ["museum", "art_museum", "park", "temple_shrine"]]]];
 const genericArtFilter: maplibregl.FilterSpecification = ["in", ["get", "category"], ["literal", ["gallery", "exhibition_space", "convention_center", "exhibition"]]];
+const interactiveLayers = ["location-hit-areas", "museum-hit-areas", "park-hit-areas", "temple-shrine-hit-areas"];
+const gsiPoiLayerIds = ["注記シンボル付き重なり", "注記シンボル付きソート順100以上", "注記シンボル付きソート順100未満"];
+
+function hideBasemapPoiSymbols(map: MapLibreMap) {
+  const hidden = gsiPoiLayerIds.filter((id) => map.getLayer(id));
+  for (const id of hidden) map.setLayoutProperty(id, "visibility", "none");
+  return hidden;
+}
 
 function applyCategoryVisibility(map: MapLibreMap, category: PlaceCategory) {
   if (!map.getLayer("location-points")) return;
@@ -28,10 +36,11 @@ function applyCategoryVisibility(map: MapLibreMap, category: PlaceCategory) {
   const parkVisible = category === "all" || category === "park";
   const templeVisible = category === "all" || category === "temple_shrine";
   map.setFilter("location-points", category === "art" ? genericArtFilter : genericPointFilter);
-  map.setLayoutProperty("location-points", "visibility", artVisible ? "visible" : "none");
+  map.setFilter("location-hit-areas", category === "art" ? genericArtFilter : genericPointFilter);
+  for (const layer of ["location-hit-areas", "location-points"]) map.setLayoutProperty(layer, "visibility", artVisible ? "visible" : "none");
   for (const layer of ["museum-hit-areas", "museum-points"]) map.setLayoutProperty(layer, "visibility", artVisible ? "visible" : "none");
-  map.setLayoutProperty("park-points", "visibility", parkVisible ? "visible" : "none");
-  map.setLayoutProperty("temple-shrine-points", "visibility", templeVisible ? "visible" : "none");
+  for (const layer of ["park-hit-areas", "park-points"]) map.setLayoutProperty(layer, "visibility", parkVisible ? "visible" : "none");
+  for (const layer of ["temple-shrine-hit-areas", "temple-shrine-points"]) map.setLayoutProperty(layer, "visibility", templeVisible ? "visible" : "none");
 }
 
 function line(root: HTMLElement, label: string, value: string | null, className?: string) { if (value) { const p = document.createElement("p"), b = document.createElement("strong"); if (className) p.className = className; b.textContent = `${label}　`; p.append(b, value); root.append(p); } }
@@ -109,7 +118,6 @@ export function EventMap({ category, onLocationsChange }: { category: PlaceCateg
     });
     const grouped = new Map<string, LocationFeature[]>();
     let allFeatures: LocationFeature[] = [];
-    const handledClicks = new WeakSet<Event>();
     const updateVisibleExhibitions = () => {
       const bounds = map.getBounds();
       const visible = allFeatures.filter((feature) => bounds.contains(feature.geometry.coordinates as [number, number]));
@@ -134,10 +142,13 @@ export function EventMap({ category, onLocationsChange }: { category: PlaceCateg
     map.on("load", async () => {
       console.info(`${logPrefix} configuring location layers`, { elapsed: elapsed() });
       try {
+        const hiddenBasemapLayers = hideBasemapPoiSymbols(map);
+        console.info(`${logPrefix} basemap POI symbols hidden`, { elapsed: elapsed(), hiddenBasemapLayers });
         map.addSource("locations", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+        map.addLayer({ id: "location-hit-areas", type: "circle", source: "locations", filter: genericPointFilter, paint: { "circle-radius": 28, "circle-color": "rgba(0,0,0,0.001)", "circle-stroke-width": 0 } });
         map.addLayer({ id: "location-points", type: "circle", source: "locations", filter: genericPointFilter, paint: { "circle-color": ["match", ["get", "category"], "exhibition", "#2563eb", "food_shopping", "#e95d75", "#2563eb"], "circle-radius": 6, "circle-stroke-color": "#fff", "circle-stroke-width": 1.5 } });
         const museumFilter: maplibregl.FilterSpecification = ["any", ["==", "category", "museum"], ["==", "category", "art_museum"]];
-        map.addLayer({ id: "museum-hit-areas", type: "circle", source: "locations", filter: museumFilter, paint: { "circle-radius": 28, "circle-color": "rgba(0,0,0,0.01)", "circle-stroke-width": 0 } });
+        map.addLayer({ id: "museum-hit-areas", type: "circle", source: "locations", filter: museumFilter, paint: { "circle-radius": 28, "circle-color": "rgba(0,0,0,0.001)", "circle-stroke-width": 0 } });
 
         console.info(`${logPrefix} loading museum icon`, { elapsed: elapsed(), museumIconUrl });
         const museumImage = await map.loadImage(museumIconUrl);
@@ -148,26 +159,41 @@ export function EventMap({ category, onLocationsChange }: { category: PlaceCateg
         for (const [name, url, itemCategory] of [["park", parkIconUrl, "park"], ["temple-shrine", templeShrineIconUrl, "temple_shrine"]] as const) {
           const image = await map.loadImage(url);
           map.addImage(`${name}-icon`, image.data);
+          map.addLayer({ id: `${name}-hit-areas`, type: "circle", source: "locations", filter: ["==", "category", itemCategory], paint: { "circle-radius": 28, "circle-color": "rgba(0,0,0,0.001)", "circle-stroke-width": 0 } });
           map.addLayer({ id: `${name}-points`, type: "symbol", source: "locations", filter: ["==", "category", itemCategory], layout: { "icon-image": `${name}-icon`, "icon-size": 0.15, "icon-allow-overlap": true, "icon-ignore-placement": true } });
         }
         applyCategoryVisibility(map, categoryRef.current);
 
-        const interactiveLayers = ["location-points", "museum-hit-areas", "museum-points", "park-points", "temple-shrine-points"];
-        const openPopup = (event: maplibregl.MapLayerMouseEvent) => {
-          if (handledClicks.has(event.originalEvent)) return;
-          handledClicks.add(event.originalEvent);
-          const feature = event.features?.[0] as LocationFeature | undefined;
+        const nearbyFeatures = (point: maplibregl.PointLike) => {
+          const pixel = point as maplibregl.Point;
+          const radius = 8;
+          const rendered = map.queryRenderedFeatures(
+            [[pixel.x - radius, pixel.y - radius], [pixel.x + radius, pixel.y + radius]],
+            { layers: interactiveLayers },
+          );
+          const candidates = rendered.flatMap((feature) => (
+            feature.geometry.type === "Point" && typeof feature.properties?.id === "string"
+              ? [feature as unknown as LocationFeature]
+              : []
+          ));
+          const unique = [...new Map(candidates.map((feature) => [feature.properties.id, feature])).values()];
+          return unique.sort((a, b) => {
+            const aPoint = map.project(a.geometry.coordinates as [number, number]);
+            const bPoint = map.project(b.geometry.coordinates as [number, number]);
+            return aPoint.dist(pixel) - bPoint.dist(pixel);
+          });
+        };
+        map.on("mousemove", (event) => {
+          map.getCanvas().style.cursor = nearbyFeatures(event.point).length ? "pointer" : "";
+        });
+        map.on("click", (event) => {
+          const feature = nearbyFeatures(event.point)[0];
           if (!feature) return;
           const coordinates = feature.geometry.coordinates as [number, number];
           const items = grouped.get(coordinateKey(coordinates)) ?? [feature];
           console.debug(`${logPrefix} location clicked`, { id: feature.id, coordinates, groupedItems: items.length });
           new maplibregl.Popup({ closeButton: true, maxWidth: "420px", offset: 22 }).setLngLat(coordinates).setDOMContent(venuePopup(items)).addTo(map);
-        };
-        for (const layer of interactiveLayers) {
-          map.on("mouseenter", layer, () => { map.getCanvas().style.cursor = "pointer"; });
-          map.on("mouseleave", layer, () => { map.getCanvas().style.cursor = ""; });
-          map.on("click", layer, openPopup);
-        }
+        });
         map.on("moveend", updateVisibleExhibitions);
         console.info(`${logPrefix} location layers configured`, { elapsed: elapsed(), interactiveLayers });
       } catch (layerError) {
