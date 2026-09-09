@@ -20,7 +20,7 @@ function matchesFilter(item: LocationFeature, filter: ExhibitionFilter, today: s
   if (filter === "future") return Boolean(starts && starts > today);
   return (!starts || starts <= today) && (!ends || ends >= today);
 }
-function price(item: LocationFeature) { const p = item.properties; return p.price_note || (p.price_min_jpy !== null ? `¥${p.price_min_jpy.toLocaleString("ja-JP")}${p.price_max_jpy !== null && p.price_max_jpy !== p.price_min_jpy ? `–¥${p.price_max_jpy.toLocaleString("ja-JP")}` : ""}` : "金額未提供"); }
+function price(item: LocationFeature) { const p = item.properties; const hasMinPrice = typeof p.price_min_jpy === "number"; const hasMaxPrice = typeof p.price_max_jpy === "number"; return p.price_note || (hasMinPrice ? `¥${p.price_min_jpy.toLocaleString("ja-JP")}${hasMaxPrice && p.price_max_jpy !== p.price_min_jpy ? `–¥${p.price_max_jpy.toLocaleString("ja-JP")}` : ""}` : "金額未提供"); }
 function period(item: LocationFeature) { const p = item.properties; return p.exhibition_period_note || (p.exhibition_starts_on ? `${p.exhibition_starts_on}${p.exhibition_ends_on ? ` ～ ${p.exhibition_ends_on}` : ""}` : "展期未提供"); }
 
 export function App() {
