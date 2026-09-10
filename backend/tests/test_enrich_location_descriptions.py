@@ -89,3 +89,15 @@ def test_non_park_poi_is_not_described_as_a_park():
         latitude=35.0, longitude=139.0, raw={"highway": "steps"},
     )
     assert module.candidate_record(row, match)["patch"] == {}
+
+
+def test_top50_ranking_text_is_a_missing_description():
+    row = {
+        "source_key": "tokyo-art-top50:27",
+        "description_ja": "東京美術館 Top 50 編集順位: 27",
+        "description_zh": "前50名編輯選擇:27",
+    }
+    assert module.description_missing(row, "description_ja")
+    assert module.description_missing(row, "description_zh")
+    row["description_ja"] = "細川家に伝来する文化財を所蔵する美術館。"
+    assert not module.description_missing(row, "description_ja")

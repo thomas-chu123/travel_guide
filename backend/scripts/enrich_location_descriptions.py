@@ -49,6 +49,10 @@ CATEGORY_WORDS = {
     "convention_center": ("会議", "コンベンション", "convention"),
 }
 TOKYO_LOCALITY_RE = re.compile(r"東京都([^0-9０-９,， ]+?[区市町村])")
+TOP50_PLACEHOLDER_RE = re.compile(
+    r"(?:東京美術館\s*Top\s*50\s*編集順位|前?50名?編輯選擇|編輯選擇)\s*[:：]?\s*\d+",
+    re.IGNORECASE,
+)
 
 
 @dataclass(frozen=True)
@@ -69,6 +73,16 @@ class Match:
 def normalize_name(value: str | None) -> str:
     text = unicodedata.normalize("NFKC", value or "").casefold()
     return PUNCT_RE.sub("", SPACE_RE.sub("", text))
+
+
+def description_missing(row: dict[str, Any], field: str) -> bool:
+    value = row.get(field)
+    if not value:
+        return True
+    return bool(
+        str(row.get("source_key", "")).startswith("tokyo-art-top50:")
+        and TOP50_PLACEHOLDER_RE.fullmatch(SPACE_RE.sub(" ", str(value)).strip())
+    )
 
 
 def distance_m(a_lat: float, a_lon: float, b_lat: float, b_lon: float) -> float:
@@ -338,9 +352,9 @@ def candidate_record(
     template_ja, template_zh = structured_template(row, match)
     description_ja = match.description_ja or template_ja
     description_zh = match.description_zh or template_zh
-    if (overwrite or not row.get("description_ja")) and description_ja:
+    if (overwrite or description_missing(row, "description_ja")) and description_ja:
         patch["description_ja"] = description_ja
-    if (overwrite or not row.get("description_zh")) and description_zh:
+    if (overwrite or description_missing(row, "description_zh")) and description_zh:
         patch["description_zh"] = description_zh
     if (overwrite or not row.get("name_en")) and match.name_en:
         patch["name_en"] = match.name_en
@@ -368,7 +382,10 @@ async def run(args: argparse.Namespace) -> None:
     if args.category:
         rows = [row for row in rows if row.get("category") == args.category]
     if not args.overwrite:
-        rows = [row for row in rows if not row.get("description_ja") or not row.get("description_zh")]
+        rows = [row for row in rows if (
+            description_missing(row, "description_ja")
+            or description_missing(row, "description_zh")
+        )]
     if args.limit:
         rows = rows[:args.limit]
 
